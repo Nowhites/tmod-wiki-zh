@@ -1,0 +1,1417 @@
+本页面包含将代码迁移到新版tModLoader的新方法和功能的指南。当tModLoader更新需要重写代码时，我们将在此处提供信息。过去版本的迁移信息，请参阅[更新迁移指南旧版](Update-Migration-Guide-Previous-Versions)
+
+<!-- Generated with https://luciopaiva.com/markdown-toc/ -->
+# 目录
+
+- [tModPorter](#tmodporter)
+- [v2026.03](#v202603)
+- [v2026.02](#v202602)
+- [v2026.01](#v202601)
+- [v2025.12](#v202512)
+- [v2025.11](#v202511)
+- [v2025.10](#v202510)
+- [v2025.09](#v202509)
+- [v2025.08](#v202508)
+- [v2025.07](#v202507)
+- [v2025.06](#v202506)
+- [v2025.05](#v202505)
+- [v2025.04](#v202504)
+- [v2025.03](#v202503)
+- [v2025.02](#v202502)
+- [v2025.01](#v202501)
+- [v2024.12](#v202412)
+- [v2024.11](#v202411)
+- [v2024.10](#v202410)
+- [v2024.09](#v202409)
+- [v2024.08](#v202408)
+- [v2024.07](#v202407)
+- [v2024.06](#v202406)
+- [v2024.05](#v202405)
+- [v2024.04](#v202404)
+- [v2024.03](#v202403)
+- [v2024.02](#v202402)
+- [v2024.01](#v202401)
+- [v2023.12](#v202312)
+- [v2023.11](#v202311)
+- [v2023.09](#v202309)
+- [v2023.08](#v202308)
+  - [额外跳跃API](#额外-jump-api)
+  - [重新设计`NPCID.Sets.DebuffImmunitySets`](#重新设计npcidsetsdebuffimmunitysets)
+  - [较小更改](#较小更改-v202308)
+  - [其他v2023.08更改](#其他-v202308-更改)
+- [v2023.X (1.4.4)](#v2023x-144)
+  - [本地化更改](#本地化更改)
+  - [新原版功能](#新原版功能)
+  - [重命名或移动的成员](#重命名或移动的成员)
+  - [重大变更概念](#重大变更概念)
+    - [本地化更改详情](#本地化更改详情)
+    - [玩家/NPC伤害hooks重新设计。Hit/HurtModifiers和Hit/HurtInfo](#玩家npc-伤害-hooks-重新设计-hit hurtmodifiers-和-hit hurtinfo)
+    - [商店更改（也称为声明式商店）](#商店更改也称为声明式商店)
+    - [瓦片掉落更改](#瓦片掉落更改)
+    - [改进Player.clientClone性能](#改进-playerclientclone-性能)
+    - [最大生命值和魔力值操作API](#最大生命值和魔力值操作-api)
+  - [较小更改](#较小更改)
+
+# tModPorter
+tModPorter是一个自动为tModLoader的更改修复模组源代码代码的工具。作为模组制作者，在主要tModLoader版本发布后更新模组的第一步通常是运行tModPorter。tModPorter将修改您的源代码文件以修复或提供关于如何修复新更新代码的建议。请也阅读下面相应的移植说明，以完全了解可能需要进一步调整代码的更改。
+
+要运行tModPorter，请在游戏中访问`Workshop->Develop Mods`菜单，然后点击"Run tModPorter"按钮。您应该会看到一个弹出窗口，显示该过程的状态。一旦完成，您应该会看到"Complete!"和一条消息，说明有多少文件受到影响。tModPorter可能无法完全修复您的模组，您可能仍需要手动修复一些内容，请参阅下一节的说明。
+![image](https://github.com/tModLoader/tModLoader/assets/4522492/4f9b52da-08b8-49d3-88b4-bcbdfa50acb9)
+![NVIDIA_Share_2023-11-27_14-47-50](https://github.com/tModLoader/tModLoader/assets/4522492/9c008200-e4d6-49e9-a87a-39797a1df14f)
+
+### tModPorter说明
+一些tModPorter修复将在模组源代码中添加注释，这些注释可能需要模组制作者进行额外的工作。打开Visual Studio并开始处理tModPorter无法移植或留下带有说明的注释的代码部分。要查找所有注释，首先，转到`工具 -> 选项 -> 环境 -> 任务列表`，并添加`tModPorter`作为自定义标记。然后关闭它，打开`视图 -> 任务列表`，它将列出所有注释。您也可以使用搜索栏过滤特定注释。
+
+<!-- 模板：
+简短：
+### `PR标题`
+**拉取请求：** <提交或PR链接>
+**简短摘要：**
+**移植说明：**
+
+长：
+### `PR标题`
+**拉取请求：** <提交或PR链接>
+
+**简短摘要**
+> - 第1行
+> - 第2行
+
+**移植说明**
+> - 第1行
+> - 第2行
+-->
+
+# v2026.03
+
+无破坏性更改。
+
+# v2026.02
+
+### 允许更多可自定义和更低样板自动加载选项的新接口
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/5009>
+
+**简短摘要**
+> - 新接口允许实现自定义自动加载，而不是仅仅`mod.AddContent(Activator.CreateInstance(type))`
+> - 现有的`ILoadable`方法需要类具有默认构造函数。这对于某些用例来说有时是不必要的样板。
+> - 有关更详细的解释，请参阅拉取请求。
+
+**移植说明**
+> - 不需要移植，但使用新功能可以使您的代码更具可读性和简洁性。
+> - 如果您是库模组作者，请参阅拉取请求描述中的`ILoadable`代码片段。
+> - 如果您是典型模组制作者，请参阅拉取请求描述中的ExampleMod更新部分。
+
+# v2026.01
+
+无破坏性更改。
+
+# v2025.12
+
+无破坏性更改。
+
+# v2025.11
+
+无破坏性更改。
+
+# v2025.10
+
+### `ModPlayer.DrawPlayer hook促进自定义玩家"影子"视觉效果`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4823>
+
+**简短摘要**
+> - 添加了促进自定义护甲套装阴影效果和转换完整玩家渲染的hooks
+> - 添加了`ModPlayer.DrawPlayer` hook，在`LegacyPlayerRenderer.DrawPlayerFull`期间调用。此hook适用于调用`Main.PlayerRenderer.DrawPlayer`绘制玩家的额外副本，允许模组实现自定义玩家"阴影"效果。
+> - 还添加了`ModPlayer.TransformDrawData`，允许效果在绘制之前立即影响所有`PlayerDrawLayer`。这可以用于着色克隆或其他转换。
+
+**移植说明**
+> - 通过使用`ModPlayer.DrawPlayer`替换`LegacyPlayerRenderer.DrawPlayerFull`的任何相关IL编辑或detours。
+> - 通过使用`ModPlayer.TransformDrawData`替换`LegacyPlayerRenderer.DrawPlayerInternal`的任何相关IL编辑或detours。
+
+### `添加PressurePlate设置、HitSwitch和SwitchTiles hooks`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4774>
+
+**简短摘要**
+> - 添加了`TileID.Sets.PressurePlate`以支持模组压力板
+> - 添加了`(Mod|Global)Tile.SwitchTiles`以允许对与瓦片碰撞的实体进行操作。
+> - 添加了`(Mod|Global)Tile.HitSwitch`以促进应该在所有客户端和服务器上运行的瓦片交互效果。
+
+**移植说明**
+> - 如果您在`ModTile.HitWire`或`ModTile.RightClick`中播放声音或生成尘埃，它们可能在多人游戏中不能正常工作。您可能希望使用`ModTile.HitTile`，方法是调用`Wiring.HitSwitch(i, j);`和`NetMessage.SendData(MessageID.HitSwitch, number: i, number2: j);`或只是`Wiring.HitSwitchAndSync(i, j);`
+> - `Collision.SwitchTiles`有一个新的`Entity`参数，旧方法已标记为`Obsolete`，适当调整MonoMod hooks或方法调用。
+> - 用在`TileID.Sets.PressurePlate`中设置适当的压力板类型替换IL编辑
+
+### `为MonoMod hooks保留向后兼容性，当方法收到新的重载时，从原始方法继承Obsolete`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4795>
+
+**简短摘要**
+> - 修复了当方法收到第二个重载时MonoMod hooks可能在tModLoader更新中重命名的问题，防止使用它的模组加载。
+> - MonoMod hooks现在从其目标方法继承`Obsolete`属性。这将强制模组制作者迁移到正确的hook。
+> - `Obsolete` MonoMod hooks也将不再运行，而是记录一条消息到日志。这是为了防止模组表现不一致。
+
+**移植说明**
+> - 一些MonoMod hooks（Detours和IL编辑）现在被标记为`Obsolete`，因为相应方法也是`Obsolete`。这些将不再起作用，并将导致编译错误。请查阅错误消息以将这些修复为使用正确的hook。
+> - 将需要重建的使用这些`Obsolete`方法的现有模组将记录到日志。如果您在其他模组中看到这些错误消息，请通知模组作者。
+
+# v2025.09
+
+### `可调节药水延迟API`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4786>
+
+**简短摘要**
+> - 添加了新的`StatModifier`字段`Player.PotionDelayModifier`，用于调整治疗药水延迟的修饰符，以及用于修改应用延迟行为背后的hooks。
+> - `(GlobalItem|ModItem).ModifyPotionDelay`允许动态修改药水疾病延迟计算。
+> - `(ModPlayer|GlobalItem|ModItem).ApplyPotionDelay`允许跳过药水疾病延迟应用。
+
+**移植说明**
+> - 当前调整药水疾病/冷却时间的模组应考虑使用此PR中的新方法和字段。
+> - 药水延迟字段（`Player.potionDelayTime`、`Player.restorationDelayTime`、`Player.mushroomDelayTime`）在装备哲学家之石时不再设置为减少的值，而是在ApplyPotionDelay中计算。它们仍然被使用，所以任何当前调整它们的模组仍然可以工作，但它们应该考虑使用新的hooks以获得更好的兼容性。
+> - 对引用私有方法`AdjustRemainingPotionSickness`的用户进行API和ABI破坏。
+
+### `新下拉样式（及更多）枚举ModConfig元素`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4785>
+
+**简短摘要**
+> - 为ModConfigs中的枚举添加了新的UI元素。
+> - 选项包括扩展面板、下拉框和循环按钮。
+> - 新的扩展面板元素将成为新的默认值，适用于在此稳定版上构建的所有模组。
+> - 如果模组制作者需要，滑块选项仍然可用。
+
+**移植说明**
+> - 新的扩展面板元素将成为在此稳定版之后构建的任何模组的默认值。如果需要新元素，发布模组的更新。
+> - 如果需要旧的下拉框方法，在枚举字段/属性上添加`[Slider]`以继续使用它。如果您需要下拉框或循环按钮，请使用`[Dropdown]`或`[Cycle]`。
+> - 您的本地化文件将自动使用每个枚举条目的工具提示条目更新。
+
+### `关于生物群系转换注册表和生物群系扩散的调整和错误修复`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4782>
+
+**简短摘要**
+> - 修复了一个允许模组感染块传播到其他感染块的问题
+> - 添加了`TileID.Sets.Infectables`以指示瓦片是否可以被自然扩散的生物群系感染
+> - 添加了`TileLoader.RegisterConversion(int tileType, int conversionType, int toType)`重载以简化简单生物群系瓦片转换的代码
+
+**移植说明**
+> - 使用`TileLoader.RegisterConversion(int tileType, int conversionType, int toType)`代替注册委托用于简单的用例。
+
+### `更好的液体斜面渲染`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4714>
+
+**简短摘要**
+> - 与斜面和半砖接触的液体已集成到标准液体渲染器中，提供了一系列视觉一致性改进。
+> - 具有部分透明度的瓦片（如原版薄冰）不再有液体在其后面绘制的痕迹。
+> - 现在可以制作具有透明部分的自定义形状瓦片（如玻璃），而不会有液体在其后面绘制的痕迹。请参阅`ExampleTransparentShapedTile`了解详情。
+
+**移植说明**
+> - 此更改应该相当稳定。试图通过某种液体渲染来修复其中一些问题模组现在可能已被破坏（希望是不必要的）。
+
+### `从1.4.5转发端口Item.material合理性修复`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4806>
+
+**简短摘要**
+> - `Item.material`现在在`SetDefaults`开始时设置，因此模组可以在`Mod/GlobalItem.SetDefaults`中更改它
+> - `ItemID.Sets.IsAMaterial`现在只包括在非禁用配方中使用的项目（或在非禁用配方的配方组中），在加载后不会更新。
+
+**移植说明**
+> - 如果您以前设置`ItemID.Sets.IsAMaterial`，请放开它，而是在`Mod/GlobalItem.SetDefaults`中设置`Item.material`
+
+# v2025.08
+
+### `ModAchievement实现和Example Mod示例`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4515>
+
+**简短摘要**
+> - 添加了`ModAchievement`，允许模组向游戏添加新成就。（请注意，这些不是实际的steam成就，不会出现在steam上）
+> - 成就菜单已更新，包含搜索、其他过滤器以及重置所有成就的选项。
+> - ExampleMod已更新了大量示例，在开始制作自己的`ModAchievement`之前，请阅读它们和PR描述，`ModAchievement`有几个重要的细微差别在示例中讲授。
+
+**移植说明**
+> - 如果您以前手动操作过成就，请使用这个新系统。
+
+### `瓦片转换回退/继承`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4709>
+
+**简短摘要**
+> - 瓦片和墙壁现在可以指定"转换回退瓦片"。当模组转换尝试转换瓦片但没有该瓦片的注册转换时，瓦片将被视为回退瓦片进行转换。
+> - 使用`(Tile|Wall)Loader.RegisterConversionFallback`和`(Tile|Wall)Loader.RegisterSimpleConversion`（如PR描述中所述）来指示瓦片转换回退类型。
+> - 覆盖`Mod(Tile|Wall).Convert`现在仅在`RegisterSimpleConversion`不足的高级用例中需要。
+
+**移植说明**
+> - 如果您的模组已经实现了瓦片转换逻辑，考虑在此PR中适应当地使用新选项以获得更好的兼容性和更易于维护的代码：
+> - 对不需要除转换瓦片/墙壁之外的任何额外逻辑的转换使用`(Tile|Wall)Loader.RegisterSimpleConversion`。
+> - 对确实需要特殊逻辑但仍应被视为其他转换的纯对应物的转换使用`(Tile|Wall)Loader.RegisterConversionFallback`。
+> - 当回退转换会产生相同结果时删除显式转换代码。
+
+### `为通过方块交换替换瓦片时添加hook`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4686>
+
+**简短摘要**
+> - 添加了`(Global|Mod)Tile.ReplaceTile`，当瓦片通过方块交换功能被替换时调用。
+
+**移植说明**
+> - 如果方块可交换瓦片有`KillMultiTile`或`KillTile`逻辑，您可能需要使用方块交换测试它，并决定是否应使用`ReplaceTile`来实现部分或全部相同的效果。
+
+### `添加ExampleCustomUseStyleWeapon，自定义useStyle的示例`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/3760>
+
+**简短摘要**
+> - 添加了`ExampleCustomUseStyleWeapon`，展示`UseStyle`和`UseItemHitbox`以及`UseItemFrame`的实现，以实现自定义物品使用样式。
+> - 添加了`ItemLoader.RegisterUseStyle`以允许模组安全地确定唯一的自定义使用样式ID。
+> - 添加了辅助方法：`Utils.CornerRectangle`、`Utils.BoundingRectangle`和`Utils.Including`
+
+**移植说明**
+> - 将自定义`Item.useStyle`值的幻数（自己编造的数字）替换为`ItemLoader.RegisterUseStyle`的结果。这将允许更大的兼容性，并将避免模组之间冲突值的可能性。
+
+### `为翻译模组添加新创意工坊标签`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/3860>
+
+**简短摘要**
+> - 为模组在Steam创意工坊添加了"翻译"标签，允许用户按或过滤掉添加翻译的模组。对于在build.txt中设置`translationMod = true`的模组，它将在发布期间自动设置。
+
+**移植说明**
+> - 标签将在模组下次发布时应用。如果希望立即获得标签，请上传新版本。
+
+### `添加ModSystem.PostWorldLoad和TileID.Sets.ClearedOnWorldLoad`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4776>
+
+**简短摘要**
+> - 添加了`TileID.Sets.ClearedOnWorldLoad`以支持正确清理类似于冰杖放置的瓦片的临时瓦片。
+> - 为`ModSystem.OnWorldLoad`太早的情况添加了`ModSystem.PostWorldLoad`。
+
+**移植说明**
+> - 如果当前使用detour、IL编辑或`WorldFile.OnWorldLoad`事件来处理此PR中新功能所涵盖的代码，考虑改用这些新功能。
+
+### `在tModLoader.targets中添加退出模组构建的选项`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4731>
+
+**简短摘要**
+> - 项目可以导入`tModLoader.targets`以引用tModLoader而不被构建为模组，通过设置属性`BuildMod`而不是重新定义会构建模组的目标。
+> - 此功能适用于需要访问tModLoader引用但不应在项目构建时打包为模组的非模组工具或库。
+
+**移植说明**
+> - 在`PropertyGroup`内将`<Target Name="BuildMod"></Target>`替换为`<BuildMod>false</BuildMod>`。
+
+# v2025.07
+
+### `tModCodeAssist端口`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4727>
+
+**简短摘要**
+> - `tModCodeAssist`代码分析器（正式名称为`tModLoader.CodeAssist`）已重新设计，现在直接包含在tModLoader发布中。
+> - 这个新实现将更容易更新，我们打算向分析器添加更多请求的代码修复。我们欢迎在[帖子](https://discord.com/channels/103110554649894912/1215350228786479204)提出建议和反馈。
+> - 如果您不知道，此功能负责在IDE中提供建议，将代码如`item.useStyle = 5;`更改为`item.useStyle = ItemUseStyleID.Shoot;`。
+> - 这也修复了旧的`tModLoader.CodeAssist`对nuget设置不当的用户造成问题的问题。
+
+**移植说明**
+> - 如果在此更新后在IDE中遇到问题，您可能需要从`Mod Sources`菜单运行"Upgrade .csproj file"。（删除对`tModLoader.CodeAssist`的旧引用）
+
+### `ProjectileID.Sets.IsInteractable和ExampleInteractableProjectile`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4701>
+
+**简短摘要**
+> - 添加了对可交互抛射物的支持。抛射物现在可以成为智能选择的目标并绘制智能选择高亮。
+> - 使用`ProjectileID.Sets.IsInteractable`并遵循`ExampleInteractableProjectile`中的逻辑来制作可交互抛射物。
+
+**移植节说明**
+> - 将`Projectile.IsInteractible`方法上的任何detours或IL编辑替换为`ProjectileID.Sets.IsInteractable`用法
+> - 考虑使用此智能光标支持升级现有的可以直接右键点击的抛射物，以获得更好的兼容性和用户体验。
+
+### `PreHoverInteract hook用于NPC`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4539>
+
+**简短摘要**
+> - 添加了`(Mod|GlobalNPC).PreHoverInteract` hooks。让模组制作者覆盖或附加右键点击或悬停在NPC上
+
+### `添加ExampleVine`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4704>
+
+**简短摘要**
+> - 添加了`ExampleVine`和一些文档。
+
+**移植说明**
+> - 我们鼓励任何有藤蔓瓦片的模组将您的代码与`ExampleVine`和`ExampleVineGlobalTile`进行比较。您的藤蔓可能不符合原版行为，例如在草瓦片更改时正确转换（Clentaminator）、正确渲染（偏移和翻转）、在用户使用生命之杖时不中断、在激活瓦片上不正确生长、在底部斜面瓦片上不正确生长、不将油漆传播到新生长的藤蔓，等等。
+
+### `正确支持手动设置图鉴星星`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4702>
+
+**简短摘要**
+> - 修复了手动设置图鉴星星。模组现在可以在`SetStaticDefaults`中设置`ContentSamples.NpcBestiaryRarityStars`。
+
+**移植说明**
+> - 在`GlobalNPC.SetBestiary`中设置`ContentSamples.NpcBestiaryRarityStars`的模组目前是偶然工作的，但我们建议改为在`SetStaticDefaults`中设置`ContentSamples.NpcBestiaryRarityStars`。
+
+# v2025.06
+
+### `更多声音修复和新SoundStyle选项`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/2566>
+
+**简短摘要**
+> - 许多原版声音行为已被修复
+> - 默认情况下，暂停游戏时声音不再停止
+> - 使用相同`SoundStyle.SoundPath`的声音现在正确地遵循`SoundStyle.Identifier`，不会被视为相同声音
+> - `SoundStyle`现在有`LimitsArePerVariant`、`RerollAttempts`和`PauseBehavior`字段来进一步自定义声音行为。
+
+**移植说明**
+> - 在修复各种错误时，此PR确实会更改一些模组制作者可能无意中依赖的现有行为。我们建议模组制作者测试其模组中与以下内容相关的声音：
+> - 默认情况下，声音现在在游戏暂停时继续播放。如果不需要，请考虑将`SoundStyle.PauseBehavior`设置为`PauseBehavior.StopWhenGamePaused`（或`PauseBehavior.PauseWithGame`）。
+> - `IsTheSameAs`的各类更改意味着一些以前被视为相同的`SoundStyle`现在被视为不同，反之亦然。如果您有多个使用相同`SoundPath`但希望它们为声音限制目的独立行为的`SoundStyle`，请确保设置`Identifier`。
+> - 如果使用变体功能，请考虑设置`SoundStyle.LimitsArePerVariant`以允许每个变体具有独立的实例限制。
+
+### `添加ModConfig.SaveChanges`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4212>
+
+**简短摘要**
+> - 添加了`ModConfig.SaveChanges`以允许模组代码安全地修改和保存`ModConfig`的更改。
+> - 添加了`ModConfig.HandleAcceptClientChangesReply`以促进对`ServerSide`配置的保存请求的回复做出反应。
+> - `ModConfig.AcceptClientChanges`现在可以在接受之前对待定的配置值进行更改。
+> - `ExampleFullscreenUI.cs`已更新以展示正确使用`ModConfig.SaveChanges`。
+
+**移植说明**
+> - 如果使用反射访问`UIModConfig.SaveConfig`，改用`ModConfig.SaveChanges`。
+> - 如果您的模组有UI，考虑使用`ModConfig.SaveChanges`保存用户偏好以保留UI位置和切换。
+
+### `负数NPCID现在与NPCDefinition兼容`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4684>
+
+**简短摘要**
+> - 负数NPCID（如Pinky）现在可以与NPCDefinition一起使用
+
+**移植说明**
+> - 由于一些负值现在对`NPCDefinition.Type`有效，"卸载"的`NPCDefinition`的`NPCDefinition.Type`已从`-1`更改为`-66`。如果您有直接检查`NPCDefinition.Type == -1`的代码，最好检查`NPCDefinition.IsUnloaded`。
+
+# v2025.05
+
+### `为ModAccessorySlot添加装备负载支持`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4340>
+
+**简短摘要**
+> - `ModAccessorySlot`默认支持负载。
+
+**移植说明**
+> - 如果不需要`ModAccessorySlot`的负载支持，将`HasEquipmentLoadoutSupport`设置为false
+> - 不支持负载的自定义背景的`ModAccessorySlot`将正常地被负载颜色着色。但是，如果使用自定义槽背景，则不会受到影响。可以使用新的hook`ModAccessorySlot.BackgroundDrawColor`进一步自定义颜色。
+> - `Player.DropItem`现在是obsolete，改用`Player.TryDroppingSingleItem`。
+> - `(Mod|Global)CanAccessoryBeEquippedWith/CanEquipAccessory`和`ModAccessorySlot.CanAcceptItem`现在可以在服务器和远程客户端上调用，而不仅仅是本地客户端。这可能意味着需要解决一些同步问题。
+
+### `完成实现删除卸载瓦片功能，添加VanillaFallbackOnModDeletion示例`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4325>
+
+**简短摘要**
+> - `ModTile/ModWall.VanillaFallbackOnModDeletion`终于实现了。请参阅PR描述中的图片，了解这意味着什么。
+> - 用户可以使用`/purgeunloaded`聊天命令删除世界上不再使用的模组的瓦片。
+> - 模组制作者可以为`VanillaFallbackOnModDeletion`赋值以指示删除的瓦片应恢复到的原版瓦片。
+
+**移植说明**
+> - 不需要做任何事情，但如果希望可以从不世界上移除模组，请考虑为`VanillaFallbackOnModDeletion`赋值。
+> - `Dirt`的默认回退应该可以工作，但如果有什么更合适的，可以使用。
+
+### `ModNPC.DeathMessage、ModNPC.ModifyDeathMessage()和NPCID.Sets.IsTownChild`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4629>
+
+**简短摘要**
+> - 添加了城镇NPC和boss死亡消息的自定义。
+> - 添加了`ModNPC.DeathMessage`，在城镇NPC或boss死亡时修改广播的消息。这也影响了在硬核模式下城镇NPC的墓碑说的内容。这允许类似于"The Twins"的自定义死亡消息，这在以前是不可能的。也可以使用`ModNPC.ModifyDeathMessage`修改颜色。
+> - 添加了`NPCID.Sets.IsTownChild`，可以防止在硬核中生成墓碑，除非上面方法另有指定，否则将死亡消息设置为"X has left!"。这是渔夫和公主使用的。
+
+**移植说明**
+> - `ModNPC.BossLoot(name, potionType)`已过时并替换为`ModNPC.BossLoot(potionType)`。现在两者都仍将被调用，但您应该考虑提前改为`DeathMessage`。
+> - 如果您有用于成对或团体boss的变通方法，可以将其删除并改用`DeathMessage`来防止重复的boss击败消息。
+
+### `修复模组墙壁的墙壁混合（Main.wallBlend）问题`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4655>
+
+**简短摘要**
+> - 墙壁混合已修复，可以为模组墙壁正常工作。墙壁混合是指不同类型墙壁之间的边界没有细黑线的地方。
+> - 以前所有模组墙壁相互混合，但这已修复，每个墙壁现在只与它们打算混合的墙壁混合。
+> - 请参阅拉取请求了解更多信息，那里有图片和动画显示原始问题和修复的行为。
+
+**移植说明**
+> - 在任何打算混合的`ModWall`中添加`Main.wallBlend[Type] = ModContent.WallType<OtherWall>();`。这只需要在一对墙壁中的一个上完成，因为这表示此墙壁在混合目的上应被视为另一个墙壁。
+> - `WallID.Sets.BlendType`从来没有起作用，尽管以前在我们的wiki上推荐过。如果您使用它，请删除它并改用`Main.wallBlend`。
+
+# v2025.04
+
+### `物品的UpdateVisibleAccessory和UpdateItemDye hooks，自定义视觉装备类型示例展示`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4606>
+
+**简短摘要**
+> - 向`ModItem`和`GlobalItem`添加了`UpdateVisibleAccessory`和`UpdateItemDye` hooks
+> - ExampleMod中的`CustomVisualEquipType`文件夹展示了一个完整的自定义视觉装备类型示例
+
+**移植说明**
+> - 如果您的模组视觉元素在玩家选择屏幕上不能正确显示，例如自定义装备类型层，您应该将代码移到`UpdateVisibleAccessory`，同时检查`hideVisual`是否为false。（按照示例操作）
+> - 现有的方法如`UpdateAccessory`、`UpdateVanity`和`UpdateEquips`对于这些自定义绘制标志来说并不完美。
+
+### `添加Player.breathEffectiveness以促进"延长水下呼吸"效果`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4399>
+
+**简短摘要**
+> - 添加了`Player.breathEffectiveness`以促进调整水下呼吸时间的兼容性
+> - 通过直接调整`Player.breath`来实现呼吸之芦或潜水头盔效果不再是最佳选择。
+> - `breathMax = 200;`添加到`Player.ResetEffects`，因此模组不再需要这样做。
+
+**移植说明**
+> - 从`ModPlayer.ResetEffects`中删除`Player.breathMax = 200;`。
+> - 如果以前调整过`Player.breath`，请改用调整`Player.breathEffectiveness`以获得更好的兼容性。
+> - 从技术上讲，`Player.breath`是呼吸容量，`Player.breathEffectiveness`是每单位呼吸持续时间，所以高级情况可能需要同时调整两者，请参阅PR了解详情。
+
+### `无上限声音效果音高`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4618>
+
+**简短摘要**
+> - 此PR允许`SoundStyle`的`Pitch`、`PitchVariance`和`PitchRange`属性产生超出以前限制的`-1..+1`八度范围的音高值。
+
+**移植说明**
+> - 检查您的代码是否意外依赖于以前存在的内部 clamping，如果有，改变它以始终产生您想要的音高范围。
+> - ```cs
+> // 这以前产生[0.25...1.0]，但现在将产生[0.25...1.25]`。
+> SoundStyle { Pitch = 0.75f, PitchVariance = 1.00f }
+> // 所以要保持旧行为，改成这样：
+> SoundStyle { PitchRange = (0.25f, 1.0f) }
+> ```
+
+# v2025.03
+
+### `自定义和命名ID集`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4381>
+
+**简短摘要**
+> - 自定义ID集（ID集是由内容ID如`ItemID.Sets.IsDrill`索引的数组）现在得到完全支持。使用`ModSystem.ResizeArrays`或用`[ReinitializeDuringResizeArrays]`注解的类来正确初始化它们。
+> - 自定义ID集可以用名称注册（"命名ID集"），允许多个模组访问同一个数组。注册后，它们可以像现有ID集一样使用。
+> - 您可能通过其他名称了解这个概念，如"内容标签"。
+> - 请参阅PR描述了解更多信息。
+
+**移植说明**
+> - 没有破坏性更改，但此PR支持的自定义和命名ID集可能大大简化现有代码，特别是对于数据被多个模组访问的跨模组情况。
+> - 有些情况在以前是不正确的，但由于此PR现在在加载期间抛出错误。最常见的问题是为已经使用`[AutoloadEquip]`自动加载的装备类型调用`EquipLoader.AddEquipTexture`。要修复，删除其中一个。
+
+### `为ModBlockTypes添加Convert() hook，以及其他生物群系转换相关功能`和`可修改的叶绿素转换`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4566>, <https://github.com/tModLoader/tModLoader/pull/4630>
+
+**简短摘要**
+> - 添加了`ModTile/ModWall.Convert` hook以允许通过clentaminator、净化粉、困难模式世界生成或感染扩散转换模组瓦片。
+> - 添加了`Tile/WallLoader.RegisterConversion`方法来提供或阻止瓦片的"全局"转换。
+> - 添加了`WorldGen.ConvertTile/Wall()`和`SpreadInfectionToNearbyTile`辅助方法以减少重复代码
+> - 添加了`BiomeConversionID.PurificationPowder`用于转换hooks。
+> - 添加了`ModBiomeConversion`以注册自定义转换。
+> - 添加了`BiomeConversionID.Chlorophyte`，并在`hardUpdateWorld`中叶绿素尝试净化附近瓦片时调用`Convert` hooks
+
+### `基本瓦片实体及更多`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4528>
+
+**简短摘要**
+> - 完整的`ModTileEntity`示例`BasicTileEntity.cs`，应该足够复杂以有用，但足够简单以作为模板。
+> - 各种新的辅助方法：`TileObjectData.TopLeft`、`TileEntity.TryGet`、`ModTileEntity.Generic_HookPostPlaceMyPlayer/Generic_Hook_AfterPlacement`、`Point16.Deconstruct`。请参阅`BasicTileEntity.cs`和PR详情以了解如何使用。
+> - 添加了`TileID.Sets.PreventsTileHammeringIfOnTopOfIt`以帮助实现不应轻易破坏的类似箱子瓦片。
+> - 各种错误修复和相关文档，请参阅PR了解详情。
+
+**移植说明**
+> - 不需要做任何事情，但新的示例和辅助方法可用于清理现有的瓦片实体代码。
+> - `TileID.Sets.PreventsTileHammeringIfOnTopOfIt`可以替换一些变通方法。
+> - 有关完整的移植说明详情，请参阅PR。
+
+### `ExampleChandelier和几个新的相关ModTile hooks`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4551>
+
+**简短摘要**
+> - 烛台和其他刚性摇摆瓦片现在可以自定义其物理和火焰视觉效果（`ModTile.AdjustMultiTileVineParameters`和`ModTile.GetTileFlameData`）
+> - 添加了`ModTile.EmitParticles`以简化以正确的时机和行为生成瓦片尘埃和gore
+> - `Animation.NewTemporaryAnimation`支持。`ModTile`现在可以使用自定义一次性动画，类似于MushroomStaton的行为方式。
+> - 添加了`ExampleChandelier`，展示所有这些hooks及更多。
+> - 模组火把现在适用于火把之神事件和常量雨熄灭功能。
+
+**移植说明**
+> - 重新访问`TileDrawing.TileCounterType.MultiTileVine`瓦片，查看新功能是否有助于使它们更好。
+> - 考虑将瓦片尘埃和gore代码从`DrawEffects`移到`EmitParticles`。这样做可以通过删除样板代码大大简化代码。
+> - 如果您使用`ExampleTorch`作为指南，请使用尘埃生成更新火把瓦片。
+
+### `ModMapLayer定位`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4587>
+
+**简短摘要**
+> - `ModMapLayer`现在支持排序。（`GetDefaultPosition`和`GetModdedConstraints`）
+> - 以前所有模组地图层将按加载顺序在所有现有层之后绘制。
+
+**移植说明**
+> - 如果需要，按需调整您的`ModMapLayer`以使用新的排序方法。
+> - 许多用户可能期望Ping显示在所有层之上，因此添加`public override Position GetDefaultPosition() => new Before(IMapLayer.Pings);`对于那个被推荐。
+
+### `伤害类别默认继承通用武器前缀`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4572>
+
+**简短摘要**
+> - 修复了`ModItem.WeaponPrefix`的默认实现以自动包含`DamageClass.Generic`的前缀
+> - 要选择退出GenericPrefixes，请将其设置为false
+
+### `修复原版霜月和南瓜月音乐优先级`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4392>
+
+**简短摘要**
+> - 霜月和南瓜月音乐比其他所有音乐的优先级更高，无法被覆盖。
+> - 它们现在都有正确的`Event`优先级。
+
+**移植说明**
+> - 如果您有此问题的变通方法，可以删除。
+
+# v2025.02
+
+### `修复ExampleRelic并为AddSpecialDraw添加TileCounterType.CustomSolid/NonSolid支持`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4535>
+
+**简短摘要**
+> - ExampleMod遗物`MinionBossRelic.cs`与原版行为不完全匹配。它以较慢的帧速率动画，由于插值而模糊。此示例已修复。
+> - `AddSpecialPoint`现在支持自定义渲染，允许60fps渲染而不是`AddSpecialLegacyPoint`的15fps渲染
+
+**移植说明**
+> - 使用此PR中对`MinionBossRelic.cs`的更改作为指南修复您的遗物瓦片。
+> - 考虑使用`AddSpecialPoint`而不是`AddSpecialLegacyPoint`用于`ModTile.SpecialDraw`用法，因为60fps渲染而不是15fps渲染会受益。拉取请求描述有执行此操作的步骤。
+> - 考虑调整`ModTile.AnimateTile` frameCounter逻辑以计数到4的倍数以获得更平滑的动画。更新后的`ModTile.AnimateTile`文档解释了为什么不是4的倍数的值会导致抖动动画
+
+### `本地化自定义玩家死亡消息（PlayerDeathReason.ByCustomReason）`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4553>
+
+**简短摘要**
+> - `PlayerDeathReason.ByCustomReason(string)`现在是`Obsolete`，替换为`PlayerDeathReason.ByCustomReason(NetworkText)`以正确支持死亡消息的本地化。
+> - 以前用户会以死亡玩家的语言看到死亡消息，而不是他们自己选择的语言。
+
+**移植说明**
+> - 如果已使用`LocalizedText`，将`localizedText.Format(substitutions)`更改为`localizedText.ToNetworkText(substitutions)`。
+> - 如果仍然直接使用字符串，请考虑通过遵循`ExampleOnBuyItem.SetStaticDefaults`和`OnCreated`中显示的示例来支持自定义死亡消息本地化。
+
+### `为从"Mod Sources"文件夹外部构建的本地模组启用开发者功能`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4548>
+**简短摘要：** 通过命令行/visual studio从`Mod Sources`文件夹外部位置构建的模组现在将显示在`Mod Sources`菜单中。请参阅PR的"如何使用"部分了解如何此功能。这可以为一些开发人员提供更多关于路径和工作流程的灵活性
+**移植说明：** 指向其他文件夹的`Mod Sources`文件夹中的符号链接现在可能在Develop Mods菜单中导致重复条目。删除这些链接将修复此问题。
+
+# v2025.01
+
+### `简单的原版树木摇晃Hook`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4503>
+
+**简短摘要**
+> - 添加了`GlobalTile.PreShakeTree`和`GlobalTile.ShakeTree`以允许自定义摇晃原版树木时的掉落物。
+> - `ShakeTrees.cs`展示了如何使用这些hooks。
+
+**移植说明**
+> - `ModTree`和`ModPalmTree` `CountsAsTreeType`现在分别默认为`TreeTypes.Custom`而不是`TreeTypes.Forest`和`TreeTypes.Palm`。这意味着模组树木默认不再拥有所有原版树木摇晃掉落。如果需要那种行为，请调整回来。
+
+### `小型解构修复`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/3993>
+
+**简短摘要和移植说明**
+> - `ConsumeItem` hooks、回调和方法已被`ConsumeIngredient/IngredientQuantity` hooks取代，后者有一个额外的`bool isDecrafting`参数。
+>   - 这允许您在闪烁时应用折扣以防止无限制作-闪烁利用。
+>   - 当前的类和hooks被标记为`[Obsolete]`但仍然有效
+> - 添加了只读属性`Recipe.DecraftDisabled`，公开以前内部的state
+> - `internal`字段`Recipe.alchemy`已被移除，因为其功能现在由`Recipe.IngredientQuantityRules.Alchemy`覆盖
+
+### `添加MusicID.Sets.SkipsVolumeRemap[]`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4530>
+
+**简短摘要**
+> - 如果您希望将模组的音乐音量略微高于原版 intended volume range，或使用为pre-1.4 TML调整过音量的旧音乐文件，您现在可以通过新的`MusicID.Sets.SkipsVolumeRemap`集或新的`Mod.MusicSkipsVolumeRemap`属性选择退出内部使用的XACT匹配音量重新映射。
+> - 默认音乐音量行为保持不变。在此PR之前以及自1.4的TML以来，默认情况下任何给定的音乐曲目都会降低播放音量以更好地匹配游戏中的原版音乐音量，如果文件峰值振幅为`+0.0dB`，则最匹配。如果为音乐曲目跳过音量重新映射，那么它将能够以约两倍于原版曲目的音量播放。
+
+# v2024.12
+
+### `允许ModPlayer.DrawEffects fullBright参数在不修改其他变量的情况下工作`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4463>
+**简短摘要：** 以前，`ModPlayer.DrawEffects`的`fullBright`参数需要修改任何颜色参数才能实际生效。此要求已被移除，使其更易于正确使用。
+**移植说明：** 如果使用`fullBright`，可以删除设置`r`、`g`、`b`或`a`的任何变通方法代码。
+
+# v2024.11
+
+### `端口ExampleBanner (EnemyBanner)`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4442>
+
+**简短摘要**
+> - 敌人横幅瓦片现在得到完全支持，`EnemyBanner.cs`显示了一个完全正确的实现。
+> - 添加了`ModBannerTile`。它包含敌人横幅瓦片的所有常见代码，应该使用它。
+> - 横幅相关的各种其他修复和文档。
+
+**移植说明**
+> - 阅读拉取请求描述中的移植说明以了解如何使用这个新功能。
+> - 其他模组中现有的横幅瓦片示例有各种错误，即使您的模组已有横幅瓦片也请阅读移植说明。
+
+### `图鉴分类控制`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4430>
+
+**简短摘要**
+> - 允许模组制作者"分类"自定义图鉴信息元素，更有力地控制元素在给定图鉴条目中的绘制位置。
+
+**移植说明**
+> - 实现`ICategorizedBestiaryInfoElement`和`ElementCategory`属性以支持模组中`IBestiaryInfoElement`的此功能。
+
+### `更多BitsByte辅助方法用于读写`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4352>
+
+**简短摘要**
+> - 通过`BitsByte`或`BinaryWriter`发送和接收bool不方便，已添加新方法。
+
+**移植说明**
+> - 考虑使用新的`BinaryReader.ReadFlags`和`BinaryWriter.WriteFlags`方法来简化和提高代码可读性。
+
+# v2024.10
+### `多瓦片风力摇摆能力`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4429>
+
+**简短摘要**
+> - 允许模组制作者"注册"其多瓦片在风中摇摆并与玩家互动，促进实现摇摆多瓦片如横幅、烛台、藤蔓等。
+> - 添加了`ExampleWideBanner`，`ExampleAnimatedTile`/"瓶中的红萤火虫"（灯笼瓦片）已更新。
+> - 添加了`TileObjectData.IsTopLeft`。各种方法已公开。
+
+**移植说明**
+> - 请更新您的横幅、灯笼、烛台等以使用新的瓦片摇摆机制以与原版瓦片保持一致。
+> - `TileDrawing.TileCounterType`/`AddSpecialPoint`/`CrawlToTopOfVineAndAddSpecialPoint`/`CrawlToBottomOfReverseVineAndAddSpecialPoint`现在都是public的
+> - 如果合适，考虑用`TileObjectData.IsTopLeft(tile)`替换`if (tile.TileFrameX == 0 && tile.TileFrameY == 0) {`或`if (tile.TileFrameX % FullTileWidth == 0 && tile.TileFrameY % FullTileHeight == 0) {`检查以获得更清晰的代码。
+
+### `增加创意工坊发布要求`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4424>
+
+**简短摘要**
+> - 模组现在需要有唯一的图标和模组描述。
+> - `icon.png`将自动缩放用于创意工坊发布，这意味着模组制作者不再需要为其图标创建`icon_workshop.png`，除非他们希望创意工坊图标比常规图标更详细。
+
+**移植说明**
+> - 如果您再也无法发布模组，请确保您的模组有唯一的图标和描述。
+
+### `ModCloud实现和Example Mod示例`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4367>
+
+**简短摘要**
+> - 添加了`ModCloud`以允许自定义云。
+> - 名为"Clouds"的文件夹中的纹理现在将自动加载为`ModCloud`，除非`Mod.CloudAutoloadingEnabled`为false。
+
+**移植说明**
+> - 如果您恰好有一个不包含`ModCloud`的名为"Clouds"的文件夹，可以在`Mod`类构造函数中添加`CloudAutoloadingEnabled = false;`。
+
+### `呼吸相关字段的文档和修复`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/commit/0d55bc751d5b2b7c5fabb5ea5e3a028a2215283a>
+**简短摘要：** `Player.breathMax`现在重置为`200`，`Player.breath`被限制为`Player.breathMax`。
+**移植说明：** 如果您的模组以前重置`Player.breathMax`或`Player.breath`，则不再需要。
+
+### `修复ExampleMod残影轨迹绘制及相关文档`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/commit/7accd386a4f795fd1df50a02abc88ec1774f8f33>
+**简短摘要：** ExampleMod中的残影示例代码不正确。如果您将其作为指南使用，请修复您的用法。
+**移植说明：** 将`for (int k = 0; k < Projectile.oldPos.Length; k++)`更改为`for (int k = Projectile.oldPos.Length - 1; k > 0; k--)`以从最远到最近绘制残影以获得正确的残影分层。
+
+### `使DynamicSpriteFont.SpriteCharacterData公开`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4427>
+**简短摘要：** `SpriteCharacterData`现在是public的。`_spriteCharacters`和`_defaultCharacterData`的public getters
+**移植说明：** 如果您的模组以前使用过反射，请考虑更新或验证兼容性。
+
+### `允许取消Player.Hurt`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4403>
+
+**简短摘要**
+> - 添加了`HurtModifiers.Cancel()`和`HurtInfo.Cancelled`，使模组更容易使玩家在特定情况下忽略某些伤害实例。
+> - 取消hurt与从FreeDodge返回true有相同的效果，尽管即使无法躲避的hurt也可以取消。与FreeDodge不同，不应用免疫帧，因此玩家在此tick仍可被另一次攻击击中，或在同一攻击下次击中。
+
+**移植说明**
+> - 无。模组制作者不需要检查`HurtInfo`是否为`Cancelled`，tModLoader不会将取消的hurt传递给hooks。
+
+# v2024.09
+### `添加护甲套装奖励激活hook`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4369>
+
+**简短摘要**
+> - 添加了`ModPlayer.ArmorSetBonusActivated`和`ModPlayer.ArmorSetBonusHeld`以促进激活模组护甲套装奖励效果而不使用变通方法。
+> - ExampleMod已更新，现在展示护甲套装效果、护甲套装阴影以及更多样化的`ModKeybind`用法。
+
+**移植说明**
+> - 如果您使用自定义热键或detour/IL编辑来激活护甲套装奖励，请考虑迁移到`ModPlayer.ArmorSetBonusActivated`或`ModPlayer.ArmorSetBonusHeld`
+
+# v2024.08
+### `多个前缀类别支持`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4175>
+
+**简短摘要**
+> - `ModItem`现在可以通过其`DamageClass`或覆盖`ModItem.MeleePrefix/WeaponPrefix/RangedPrefix/MagicPrefix`属于多个前缀类别
+> - 添加了`DamageClass.GetPrefixInheritance`以允许DamageClasses声明使用它的武器应继承哪些原版前缀类别。（例如，Melee/Magic混合类可能希望武器获得Melee和Magic前缀）
+
+**移植说明**
+> - 模组中的一些现有物品现在可能计入多个前缀类别，特别是那些使用自定义`DamageClass`的物品。测试这些物品并确定它们的前缀是否符合预期。根据需要调整`DamageClass.GetPrefixInheritance`或`ModItem.MeleePrefix/WeaponPrefix/RangedPrefix/MagicPrefix`。
+> - PR描述中包含的`MultiplePrefixSupportTestMod.tmod`模组可用于轻松比较前缀结果，请使用它来验证物品前缀符合预期。
+> - 如果使用`Item.GetPrefixCategory`，改用`Item.GetPrefixCategories`并调整您的逻辑
+
+# v2024.07
+### `修复几个TileObjectData问题并记录TileObjectData类`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4275>
+
+**简短摘要**
+> - `TileObjectData`类已完全记录
+> - 基本瓦片wiki页面已更新
+> - 修复了与`TileObjectData`/瓦片放置相关的几个问题：
+>   - 具有备用放置的模组瓦片有时需要变通方法以放置时不破坏
+>   - 修复了`TileObjectData.GetTileStyle`/`GetTileInfo`在使用`StyleMultiplier`与`StyleLineSkip`时错误忽略`StyleMultiplier`的问题，这将允许也使用`StyleWrapLimit`的瓦片正确工作。
+> - `ExampleDoorOpen`修复为向左打开时不破坏。
+> - 添加了`TileObjectDataShowcase.cs`以展示和可视化高级`TileObjectData`用法，如左右放置、随机放置、动画、切换状态、自定义锚点和多样式。
+
+**移植说明**
+> - 模组制作者如果使用`TileObjectData.newTile.CopyFrom(TileObjectData.GetTileData(TileID.OpenDoor, 0));`或门向左打开时破坏，应修复其开门瓦片。
+> - 模组制作者应仔细检查使用备用放置（`TileObjectData.newAlternate`/`TileObjectData.addAlternate()`）的瓦片是否按预期工作。修复不应造成问题，但变通方法可能不正确，因此可能会被破坏。
+> - 模组制作者应在正确的地方使用`StyleLineSkip`和`StyleMultiplier`。这应该减少变通方法的使用，如使用`RegisterItemDrop`或`GetItemDrops`来修复被错误计算的物品掉落。
+
+# v2024.06
+### `Example Rockets和爆炸抛射物修复和功能`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/3501>
+
+**简短摘要**
+> - `ProjectileID.Sets.Explosive[]`以匹配原版爆炸物的行为，而无需使用`aiStyle 16`
+> - 新的`Projectile.HurtPlayer(Rectangle hitbox)`方法，如果玩家与碰撞箱相交，将伤害本地玩家。
+> - 新的`PrepareBombToBlow` hook以正确实现爆炸物。
+> - 一套完整的火箭抛射物以及火箭发射器和火箭弹药物品，展示它们如何相互连接。
+
+**移植说明**
+> - 如果您使用`Projectile.aiStyle = ProjAIStyleID.Explosive`（16）来匹配爆炸物的原版行为，现在可以使用`ProjectileID.Sets.Explosive[]`。还要覆盖`PrepareBombToBlow`并在那里添加爆炸调整大小的逻辑。
+> - 火箭弹药应该为所有适用的原版发射器定义`ProjectileID.Sets.SpecificLauncherAmmoProjectileMatches`。
+> - 火箭发射器应设置`AmmoID.Sets.SpecificLauncherAmmoProjectileFallback`到最接近的原版发射器以从弹药特定的抛射物继承。
+> - 如果您使用`PickAmmo()`或类似方法来修复您的火箭弹药在雪人炮和Celebration Mk2上射击错误的抛射物，请再次检查，因为这可能不再必要。
+
+### `修改宠物、聊天泡泡、派对帽和表情泡泡位置`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4222>
+
+**简短摘要**
+> - `NPCID.Sets.PlayerDistanceWhilePetting[]`更改玩家在宠物城镇史莱姆时站立距离。
+> - `NPCID.Sets.IsPetSmallForPetting[]`更改玩家在宠物城镇史莱姆时手臂是否向上或向下成角度。
+> - `(Mod|Global)NPC.ChatBubblePosition(ref Vector2 position, ref SpriteEffects spriteEffects)`更改悬停在城镇NPC上时出现的聊天泡泡。
+> - `(Mod|Global)NPC.EmoteBubblePosition(ref Vector2 position, ref SpriteEffects spriteEffects)`更改NPC上的表情泡泡。
+> - `(Mod|Global)NPC.PartyHatPosition(ref Vector2 position, ref SpriteEffects spriteEffects)`以更好地控制城镇NPC上的派对帽。
+> - 新的`NPCID.Sets.NPCFramingGroup[Type] = 8`，派对帽没有预定义的偏移量。
+
+### `ExampleFlask和EmitEnchantmentVisualsAt hook`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/commit/5108256b0839172203b1534035755e9064a7780e>
+
+**简短摘要**
+> - 添加了`(ModPlayer|ModProjectile|GlobalProjectile)EmitEnchantmentVisualsAt` hooks。这些促进了武器附魔视觉效果。
+> - `MeleeEffects`已被用于此目的，但只覆盖物品，不覆盖抛射物。通过两个hooks，现在可以完全支持武器附魔视觉效果。
+> - `ExampleFlask`和`ExampleWeaponImbue`展示了药水瓶和相应武器灌注的完整实现，这是最常见的武器附魔类型。
+
+**移植说明**
+> - 具有武器附魔（如药水瓶、霜冻护甲或岩浆石类型效果）的模组应实现`EmitEnchantmentVisualsAt` hook。代码将与您已经使用的`MeleeEffects`代码非常相似，请参阅`ExampleWeaponEnchantmentPlayer.cs`中的示例。
+> - 如果您愿意，可以使用`Player.MeleeEnchantActive`而不是将`Player.meleeEnchant`设置为高值。
+> - 考虑在武器附魔激活时测试模组中的抛射物，为不应受武器附魔效果（buff）或视觉效果（尘埃）影响的特殊抛射物设置`Projectile.noEnchantments = true`。
+> - 如果武器附魔视觉效果在近战抛射物上似乎定位不正确，例如可能发生在"光剑"（如Excalibur）上，考虑使用`Projectile.noEnchantmentVisuals = true`和`Projectile.EmitEnchantmentVisualsAt`（如`ExampleSwingingEnergySwordProjectile`中所示）手动定位附魔视觉效果。
+
+### `将UseItem添加回QuickHeal和QuickMana，自1.3以来缺失`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/commit/2f6c9a25a3ac178af30f8bd58e1c411b77ab006d>
+
+**简短摘要**
+> - `ItemLoader.UseItem`（`(Mod|Global)Item.UseItem`）调用已添加回`Player.QuickHeal`和`Player.QuickMana`。自1.3以来一直缺失。
+
+**移植说明**
+> - 检查处理药水/魔力药水健康/魔力的UseItem逻辑是否仍适用于快速治疗和快速魔力热键。
+
+# v2024.05
+本月无事。
+
+# v2024.04
+### `允许着色器省略它们不使用的参数。`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/commit/30b2b9b1e3347a1c98ebe6924811ba5e82391dc3>
+**简短摘要：** 着色器不再需要声明游戏期望的所有参数
+
+### `GoreID.Sets.LiquidDroplet`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/commit/06996a53d6071cbd33653b8bfda2628ca47c8777>
+
+**简短摘要**
+> - `GoreID.Sets.LiquidDroplet`已添加以完全支持模组液体滴落gore。旧的`GoreID.Sets.DrawBehind`方法导致一些轻微的视觉错误。
+
+**移植说明**
+> - 在模组液体滴落gore中将`GoreID.Sets.DrawBehind`用法替换为`GoreID.Sets.LiquidDroplet`。与ExampleDroplet.cs进行比较。
+
+### `ModTile/GlobalTile.CanPlace功能恢复`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/commit/6e66b805a8ba15adf1a3b25710d558cea3a5416d>
+
+**简短摘要**
+> - `ModTile/GlobalTile.CanPlace`一直没有正常工作，已修复。
+
+**移植说明**
+> - 验证您的`CanPlace`代码仍然正确，并摆脱任何手动变通方法。请注意`CanPlace`在设计时在方块交换期间也被调用。
+
+### `ItemID.Sets.DuplicationMenuToolsFilter添加`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4120>
+**简短摘要：** 以前无法声明物品是创意模式复制菜单的工具。现在可以使用`ItemID.Sets.DuplicationMenuToolsFilter`实现此目的。
+
+### `shopCustomPrice无限金钱利用`
+**简短摘要**
+> - 模组制作者应仔细检查其`Item.shopCustomPrice`用法。我们最近意识到模组设置`shopCustomPrice`远低于`Item.value`。我们已经确定，custom price为regular value的`0.44倍`将允许拥有max happiness和折扣卡的用户在离开并进入世界后以高于购买价格的价格将物品卖回商店。这是因为normal `Item.value`用于确定销售价格。要么提高`shopCustomPrice`要么降低`Item.value`以避免此利用。
+
+# v2024.03
+此版本包括从.NET 6到.NET 8的更新。模组制作者需要安装[.NET 8 SDK](https://github.com/tModLoader/tModLoader/wiki/tModLoader-guide-for-developers#net-8-sdk)并[将Visual Studio更新到至少VS2022 17.8](https://learn.microsoft.com/en-us/visualstudio/install/update-visual-studio?view=vs-2022#use-the-visual-studio-installer-1)。之后，重启电脑。详见下文。
+
+### `将TML从.NET 6移植到.NET 8`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4037>
+
+**简短摘要**
+> - 将tModLoader从.NET6升级到.NET8。
+> - 玩家报告了明显的性能改进。世界生成基准测试完成速度快10%！
+> - 模组开发者将受益于新C#和.NET功能的访问，如[`ref fields`](<https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/low-level-struct-improvements.md>)、[`generic math`](<https://github.com/dotnet/csharplang/blob/main/proposals/csharp-11.0/static-abstracts-in-interfaces.md>)、[`unsafe accessors`](<https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.unsafeaccessorattribute>)，等等。
+
+**移植说明**
+> - 安装[.NET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+> - 要更新模组项目文件 - 访问`Develop Mods`菜单并点击模组附近的`Upgrade`按钮。由于[`#4134`](<https://github.com/tModLoader/tModLoader/pull/4134>)，这是一个安全的操作。未来的运行时更新将不需要此步骤。
+> - 如果您是使用`Windows 8.1`或更早版本的开发人员 - 您需要运行一个命令以获得持续流畅的体验。按`Win + R`，在"运行"窗口中粘贴`setx DOTNET_EnableWriteXorExecute 0`，然后按Enter。也建议重启PC。玩家实际上不需要这样做。
+> - Visual Studio中的.NET 8开发需要VS2022 17.8或更高版本。如果从VS2019更新 - 确保导出您的自定义/配置以便在更新后重新导入。
+> - 您可能也需要重启电脑。
+
+### `重构模组创建以使用文件树模板。`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4134>
+
+**简短摘要**
+> - 升级模组时，在可能的情况下不再完全重置其`.csproj`文件。这是一个安全的操作。
+> - "Create Mod"对话框生成的模组模板中的所有文件都略有改进，包括默认模组图标。
+> - `LangVersion`、`TargetFramework`、`PlatformTarget`和`CodeAssist` `PackageReference`等属性被移除，以支持始终导入的`tModLoader.targets`。如果您有这样的边缘情况干扰这种变化 - 请告诉我们。条件组目前被跳过以防万一。
+
+# v2024.02
+### `新资产指南和ShaderData的新Asset<Effect>构造函数`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/compare/3ed8e6eff98af2b7fea55b236a7849e409617ff8...58ed35b2ddedcc7f67a7be50a57223de2cd414b0>
+
+**简短摘要**
+* 我们注意到许多模组没有尽可能高效地使用`Assets<T>`。这些更改和附带指南将帮助模组制作者改进模组的加载时间和性能。
+* 新的[资产wiki页面](https://github.com/tModLoader/tModLoader/wiki/Assets)已创建，以教授模组制作者关于如何正确使用`Asset`类的各种指南。
+* [ExampleMod已更新](https://github.com/tModLoader/tModLoader/pull/4121)以遵循这些新指南。它作为资产wiki页面中教授的指南的实际示例。
+* 日志消息将警告在模组加载期间花很长时间使用`AssetRequestMode.ImmediateLoad`的模组。
+* ShaderData现在有一个接受`Asset<Effect>`的构造函数，允许更高效的着色器加载。
+
+**移植说明**
+* 请阅读新的[资产wiki页面](<https://github.com/tModLoader/tModLoader/wiki/Assets>)并应用其中教授的指南。
+* 使用新的`Asset<Effect>`方法替换`ShaderData`构造函数：
+> 旧：
+> ```new ArmorShaderData(new Ref<Effect>(Mod.Assets.Request<Effect>("Assets/Effects/ExampleEffect", AssetRequestMode.ImmediateLoad).Value), "ExampleDyePass")```
+> 新：
+> ```new ArmorShaderData(Mod.Assets.Request<Effect>("Assets/Effects/ExampleEffect"), "ExampleDyePass")```
+
+### `修复模组鱼竿上的原版浮标钓线偏移不正确的问题。`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4060>
+
+**简短摘要：** `ModProjectile.ModifyFishingLine`已被弃用，`ModItem.ModifyFishingLine`已添加以替换它。基本上，竿物品现在控制字符串位置和颜色，而不是浮标抛射物，匹配Terraria行为。
+
+**移植说明：** 将bobber抛射物的`ModProjectile.ModifyFishingLine`中的逻辑移至竿物品的`ModItem.ModifyFishingLine`。
+
+### `分离DisplayName和DisplayNameClean`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4052>
+
+**简短摘要：** 添加了`Mod.DisplayNameClean`属性。在将模组的显示名称输出到日志或控制台窗口时使用此属性。如果您的模组具有按模组显示名称搜索或过滤的能力（如搜索栏），也使用它。
+
+**移植说明：** 如果合适，将`Mod.DisplayName`更改为`Mod.DisplayNameClean`。
+
+### `完整的Builder Toggle API`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/3943>
+
+**简短摘要：** `BuilderToggle`现在有更多功能，如自定义绘制、排序和左右点击方法。
+
+**移植说明：** `BuilderToggle.DisplayColorTexture`现在是obsolete。改用`BuilderToggle.Draw/DrawHover`并修改`drawParams.Color`。
+
+### `模组沙和沙枪支持`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4053>
+
+**简短摘要**
+* 沙瓦片及相关落沙和沙枪抛射物现在本地支持。
+* 如果您的模组以前实现了沙瓦片，它们仍然应该工作。您可以查阅ExampleSand了解如何用更简洁的代码完成此操作。以前在线可用的模组沙示例与1.4.4 Terraria中添加的错误修复有轻微不一致，因此对于完全的行为一致性，可能值得切换到原生方法。
+
+**移植说明**
+* 如果使用反射访问`WorldGen.SpawnFallingBlockProjectile`，它不再私有，可以正常调用。
+
+### `允许.hjson文件用于非本地化目的`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4087>
+
+**简短摘要**
+* TML将不再干扰模组开发者希望将`.hjson`文件用于非本地化需求（如内容和数据声明）的情况，只要文件的名称不以语言代码开头（例如`en-US`）。
+* 如果您要利用此功能 - 建议在资产枚举模式中使用一致的uffixes（例如`*.weather.hjson`、`*.data.hjson`、`*.recipe.hjson`），以避免重复我们的初始错误。
+
+**移植说明**
+* `LocalizationLoader.(GetCultureAndPrefixFromPath -> TryGetCultureAndPrefixFromPath)`。不太可能有人用过。
+
+### `两个PR提高HookList和GlobalHookList的性能和可用性`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4088> <https://github.com/tModLoader/tModLoader/pull/4089>
+
+**简短摘要**
+* 将模组加载时间提高至10%
+* 自定义hooks的方法不再通过反射指定，而是使用'lambda expression'语法
+* 唯一具有运行时破坏的模组是具有`ref`或`out`参数的自定义hooks。
+
+添加自定义hooks的示例（对于虚构方法`OnThrow`在`MyInterface`中）：
+```cs
+// GlobalItem hook
+GlobalHookList<GlobalItem> HookOnThrow = ItemLoader.AddModHook(GlobalHookList<GlobalItem>.Create(g => ((MyInterface)g).OnThrow));
+
+// ModPlayer hook
+HookList<ModPlayer> HookOnThrow = PlayerLoader.AddModHook(HookList<ModPlayer>.Create(p => ((MyInterface)p).OnThrow));
+```
+
+如果您在更新模组或实现自定义hooks时需要帮助，请在Discord上Ping Chicken Bones或Mirsario。
+
+# v2024.01
+
+### `修复Knockback.Flat影响knockBackResist值为0的NPC`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/commit/03a47b82c764e73243aa809f0d033f4dfbaaa793>
+
+**简短摘要**
+* `knockBackResist`值为0的`NPC`应该对击退免疫，但旧实现会对`NPC.HitModifiers.Knockback.Flat`赋值值的NPC应用击退。
+* 这被认为是错误的，因此添加了`DisableKnockback`方法以完全禁用击退。它自动应用于`knockBackResist`值为0的NPC
+
+**移植说明**
+* 如果出于某种原因您的模组依赖于此行为，您将不得不设计变通方法。已认为此行为不正确，因此没有实现简单的变通方法。
+
+### `修复Multilure和Sonar buff导致物品拾取文本增加1`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/commit/247c77b853aa299c39328d3484ab9e072d4cc1d1>
+**简短摘要：** 修复多个浮标导致声纳buff相关问题。
+**移植说明：** 如果您在bobber抛射物中使用`Projectile.localAI[2]`，改用您自己的GlobalProjectile字段。修复使用它。
+
+# v2023.12
+
+### `在SetDefaults和TurnToAir中使类型0实体处于非活动状态`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4032>
+
+**简短摘要**
+* `SetDefaults(0)`和`TurnToAir()`现在将为`NPC`、`Projectile`和`Item`设置`active`为`false`
+* 应该减少由于dummy和despawned实体被意外假定为`active`而导致的问题，以及随后`GetGlobal`调用失败的问题。
+
+### `检查Outer类型的PreJITFilter属性并改进错误消息`
+**拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4033>
+
+**简短摘要**
+* 将检查jit过滤器属性如`[ExtendsFromMod("ModName")]`的外部类型
+* 这使得使用引用弱引用模组类型的lambda变得更容姿
+
+### `主菜单ActiveInterface和Recalculate()垃圾邮件修复`
+**提交：** [#0](<https://github.com/tModLoader/tModLoader/commit/e842f3b>), [#1](<https://github.com/tModLoader/tModLoader/commit/17b4266>).
+
+**简短摘要**
+* 已将提交推送到`Preview`以修复主菜单界面每帧重新计算的不意长期错误行为，此修复提高了性能等。
+* 此错误行为导致我们最近的一些主菜单GUI的编写没有正确的manual `Recalculate()`调用，使它们依赖于此错误，因为由于它一切看起来对我们测试都很好。
+
+**移植说明**
+* 如果您的模组包含在**主菜单中显示**的自定义用户界面 - 请确保它们在预览版上没有出现问题，如果出现了 - 在首次激活界面时或应该刷新时插入manual `Recalculate()`调用。就像编写GUI时通常应该做的那样。
+
+**示例修复：**
+* [TModLoader的删除模组对话框修复](<https://github.com/tModLoader/tModLoader/commit/77019e9>)。
+* [TerrariaOverhaul的自定义配置屏幕修复](<https://github.com/Mirsario/TerrariaOverhaul/pull/165/commits/83f5978>)。
+
+# v2023.11
+
+### [PR 3922](https://github.com/tModLoader/tModLoader/pull/3922): 导致渲染不匹配的坏瓦片对象数据
+**简短摘要：**
+* tModLoader存在一个可能导致'浮动'瓦片的视觉错误
+* 烦人的是，这些问题有时是由在第一个受影响的ModTile之前加载的ModTile中的错误代码引起的，导致难以追踪的错误。
+* 此PR通过在CopyFrom中重置受影响的字段来修复问题。此PR还在CopyFrom中抛出错误以指示模组制作者的代码没有做他们认为的那样，并在开发模组时如果适用会给你错误
+
+### [错误修复提交](https://github.com/tModLoader/tModLoader/commit/a44fd59a54df7823dc5b4ee5be3e09081fab3087)：`NPC.aiStyle`现在为模组NPC默认为-1
+**简短摘要：**
+* ai = -1用于自定义AI应用。tModLoader代码期望将-1作为默认值，但由于拼写错误而被编写为零。
+* 如果您一直通过将其保留为默认值来隐式使用aiStyle 0，则需要明确分配它
+
+# v2023.09
+
+### [修复3825](https://github.com/tModLoader/tModLoader/commit/89d407f518804819abd363bb939ba990c56f9758)：TileDrawing.IsVisible(tile)现在public
+**简短摘要：**
+* Terraria 1.4.4添加了回声瓦片和涂层，但ExampleMod和其他模组没有调整其代码。
+* 许多使用`ModTile.PostDraw`的模组将在瓦片不可见时错误地绘制火把火焰并生成尘埃。
+* 使`TileDrawing.IsVisible(tile)`方法public，更新ExampleMod以使用。
+
+### [PR 3750](https://github.com/tModLoader/tModLoader/pull/3750)：ModConfig.AcceptClientChanges参数更改。
+**简短摘要：** `string`参数替换为`NetworkText`参数以更好地支持本地化。
+
+### [PR 3684](https://github.com/tModLoader/tModLoader/pull/3684)：添加了`TileID.Sets.CanPlaceNextToNonSolidTile`
+**简短摘要：**
+* 新的`TileID.Sets.CanPlaceNextToNonSolidTile[]`，允许玩家在非实心瓦片旁边放置瓦片。
+* 允许与蛛网、硬币堆、燃烧方块、烟雾方块和泡沫方块相同的放置行为。
+
+# v2023.08
+
+### 额外跳跃API
+[PR 3552](https://github.com/tModLoader/tModLoader/pull/3552)添加了实现和修改额外中途跳跃的适当API。
+
+**简短摘要：**
+* 添加了`ExtraJump`，一个表示额外跳跃的单例类型，通过`ExtraJumpState`结构控制
+  * 可以通过`Player`中的`GetJumpState`方法获取跳跃的`ExtraJumpState`对象
+  * 额外跳跃可以在"当前更新tick"中被禁用或完全消耗
+    * **注意：** `ExtraJumpState.Disable()`如果可用将消耗额外跳跃，如果当前处于活动状态则提前停止
+* 添加了与检查玩家额外跳跃状态相关的新方法到`Player`
+  * 还包括`blockExtraJumps`字段，可以防止使用任何额外跳跃，但不会停止当前活动的跳跃或消耗任何剩余的额外跳跃
+* Flipper游泳现在被认为是"额外跳跃"，可以通过`Player.GetJumpState(ExtraJump.Flipper)`访问
+* `Player.sandStorm`现在更直接地与*瓶中沙尘暴*额外跳跃的状态相关
+
+ExampleMod包含[简单](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Items/Accessories/ExampleExtraJumpAccessory.cs)和[复杂](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Items/Accessories/ExampleMultiExtraJumpAccessory.cs)额外跳跃的示例，以及[修改额外跳跃](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Common/Players/ExampleExtraJumpModificationPlayer.cs)的示例。
+
+PR的原始评论包含用于启用/禁用额外跳跃、在`ModBuff`中临时禁用额外跳跃和更改额外跳跃的水平移动修改的代码片段。
+
+**移植说明：**
+* 所有原版跳跃的`Player.hasJumpOption_X`、`Player.canJumpAgain_X`和`Player.isPerformingJump_X`现在通过相应额外跳跃的`ExtraJumpState`访问
+  * 如果您将其中一个或多个字段设置为`false`以禁用额外跳跃，请改用`ExtraJumpState.Disable()`
+  * 如果您禁用所有额外跳跃：
+    * 设置`Player.blockExtraJumps = true;`用于临时禁用
+    * 调用`Player.ConsumeAllExtraJumps()`（可选地后跟`Player.StopExtraJumpInProgress()`）用于永久禁用直到玩家着陆
+* `Player.accFlipper`和`Player.sandStorm`现在是属性，因此使用它们的任何代码都需要重建
+
+### 重新设计`NPCID.Sets.DebuffImmunitySets`
+[PR 3453](https://github.com/tModLoader/tModLoader/pull/3453)重新设计了NPC buff免疫
+
+**简短摘要：**
+- 用`NPCID.Sets.SpecificDebuffImmunity`、`NPCID.Sets.ImmuneToAllBuffs`和`NPCID.Sets.ImmuneToRegularBuffs`替换`NPCID.Sets.DebuffImmunitySets`以简化模组制作者代码。
+- 通过`BuffID.Sets.GrantImmunityWith`集和相应方法添加buff免疫继承。
+
+**移植说明：**
+- 如果您的模组有任何NPC或做任何与buff免疫相关的事情，您需要更新它们的buff免疫代码。阅读[PR 3453](https://github.com/tModLoader/tModLoader/pull/3453)的移植说明。
+- 模组应考虑使用新的buff免疫继承系统进行buff继承兼容性。
+
+<a name="smaller-changes-v202308"></a>
+### [PR 3770](https://github.com/tModLoader/tModLoader/pull/3770)：将`(Mod|Global)Projectile.Kill` hook重命名为`OnKill`
+**简短摘要：** `(Mod|Global)Projectile.Kill`重命名为`OnKill`以更好地匹配行为和其他类似的hooks。
+**移植说明：** 运行tModPorter或将`(Mod|Global)Projectile.Kill`用法重命名为`OnKill`
+
+### [PR 3759](https://github.com/tModLoader/tModLoader/pull/3759)：`ModPlayer.OnPickup` hook
+**简短摘要：**
+- 添加了`ModPlayer.OnPickup`，其功能与`GlobalItem` hook相同。
+- 添加此hook是为了方便，当许多模组制作者想要的效果存储在`ModPlayer`实例上时，减少创建单独`GlobalItem`类的需要
+
+### [PR 3746](https://github.com/tModLoader/tModLoader/pull/3746)：添加模组世界头数据
+**简短摘要：**
+- 模组世界数据现在可以保存到'.twld'文件中的'header'。header可以不用反序列化整个.twld文件读取，模组数据在世界选择菜单和原版世界加载期间可访问。
+- 模组上次游玩的模组列表现在显示在世界选择菜单中，就像玩家一样
+- 世界生成时使用的模组列表（和这些模组的版本）现在存储在header中。当然仅适用于未来生成的世界。
+
+请参阅[PR 3746](https://github.com/tModLoader/tModLoader/pull/3746)了解更多详情和使用示例
+
+### [PR 2918](https://github.com/tModLoader/tModLoader/pull/2918)：模组表情泡泡
+**简短摘要：**
+- 模组现在可以制作自定义表情
+- 模组可以调整NPC选择表情的方式
+
+### [PR 3731](https://github.com/tModLoader/tModLoader/pull/3731)：模组Builder Toggles
+**简短摘要：** 模组现在可以制作builder toggles，即库存左上角的小图标，用于方块交换、线路可见性等。
+**移植说明：** 如果您以前使用自己的方法制作builder toggles，请使用tModLoader方法。
+
+### [PR 3710](https://github.com/tModLoader/tModLoader/pull/3710)：更好的更新日志
+**简短摘要：** 扩展ChangeLog功能
+**移植说明：**
+- tModLoader在提供changelog.txt时不再添加自己的文本。我们建议根据[ExampleMod的changelog.txt](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/changelog.txt)添加到您自己的changelog.txt文件中
+- 为方便起见，在发布期间，示例中的所有4个字段（如`{ModVersion}`）被tModLoader的信息替换。
+
+### [PR 3568](https://github.com/tModLoader/tModLoader/pull/3568)：Rubblemaker支持
+**简短摘要：** 模组现在可以将瓦片添加到[Rubblemaker](https://terraria.wiki.gg/wiki/Rubblemaker)
+
+### 其他v2023.08更改
+* [`ItemID.Sets.IsSpaceGun添加`](https://github.com/tModLoader/tModLoader/commit/b6a6fcc40d2d39aed6df98e862f29e8deaf7a77e)
+* [`GlobalInfoDisplay.ModifyDisplayParameters替换ModifyDisplayValue/ModifyDisplayName/ModifyDisplayColor`](https://github.com/tModLoader/tModLoader/commit/3ca9bf16a3722c35ea86377b7a28f4456b072743)
+* [`GenPass.Disable和GenPass.Enabled`](https://github.com/tModLoader/tModLoader/commit/8460afd82e71a88b7fa3856713e33baa4f0fda57)
+* [`TooltipLine.Hide和TooltipLine.Visible`](https://github.com/tModLoader/tModLoader/commit/42daf2a8789bebab092902a4dad59bdfdfd88a17)
+* [`ModTree.Shake`的`createLeaves`参数现在默认为`true`](https://github.com/tModLoader/tModLoader/commit/1352e4b5c8109de9f86cc20735bceb91ebdb5198)
+* [自动TranslationsNeeded.txt功能](https://github.com/tModLoader/tModLoader/commit/aee3e5ece65982d28dd0e4c5930e4fbc501e3882)
+* [`GlobalInfoDisplay.ModifyDisplayColor`有新参数`displayShadowColor`](https://github.com/tModLoader/tModLoader/commit/8e0274a1fb317b856600a804acc93cd2635d31fe)
+* [`DamageClassLoader.GetDamageClass添加`](https://github.com/tModLoader/tModLoader/commit/e9572b649b8e8af69c2d493b33043bb61e3e9c9a)
+* [`TileRestingInfo`构造函数更改](https://github.com/tModLoader/tModLoader/commit/e5ac187611e201685650bca482cbecfa457b7649)
+* [`ModTile.IsTileBiomeSightable hook`](https://github.com/tModLoader/tModLoader/commit/57d8c0de992e688465257c184f2eaf1c7307ea3e)
+* [`SceneMetrics.GetLiquidCount添加`](https://github.com/tModLoader/tModLoader/commit/d03a022416e01f7858800454e20ce28a1d5c954b)
+* [`NPCID.Sets.BelongsToInvasionGoblinArmy/`BelongsToInvasionFrostLegion/`BelongsToInvasionPirate/`BelongsToInvasionMartianMadness/`NoInvasionMusic/`InvasionSlotCount添加`](https://github.com/tModLoader/tModLoader/commit/4f378265980bc513105618113a22b76f531358b3)
+* [`ArmorIDs.Head.Sets.IsTallHat添加`](https://github.com/tModLoader/tModLoader/commit/a2f8cfa204f403fe6d99aee67a6722a22329cf0d)
+* [`GoreID.Sets.PaintedFallingLeaf添加`](https://github.com/tModLoader/tModLoader/commit/e171965d2547488d7eca5d45c4eac6d0cadf252c)
+* [所有`LocalizationCategory`实现现在都是virtual](https://github.com/tModLoader/tModLoader/commit/ffea871bc30f5eea3ba0f4d2162ce26c38d8eb2d)
+
+# v2023.X (1.4.4)
+tModLoader团队利用Terraria 1.4.4.9的发布实施了各种破坏性更改。这些更改是社区强烈要求的大量功能。更改范围以及Terraria中的更改非常大，所有模组都需要更新才能在1.4.4上继续工作。1.4.3的tModLoader将继续作为`1.4.3-legacy`steam测试版选项供用户使用。如果模组制作者打算继续为1.4.3用户更新他们的模组，他们应该使用备份或[Git](https://github.com/tModLoader/tModLoader/wiki/Intermediate-Git-&-mod-management)来维护1.4.3和1.4.4的源代码副本。
+
+此迁移指南假设模组已迁移到1.4.3。如果不是这样，首先执行此操作。
+
+迁移到1.4.4的第一步是遵循下面的[本地化更改](#本地化更改)部分。完成后，通过 following the[instructions](https://github.com/tModLoader/tModLoader/wiki/tModLoader-guide-for-players#to-access-13-legacy-tmodloader-and-other-beta-options)中的说明在steam上切换到`None`分支。启动tModLoader，确保角落显示`Terraria v1.4.4.9`和`tModLoader v2023.6.x.y`。接下来，在游戏中访问Workshop->Develop Mods菜单，然后点击"Run tModPorter"按钮。完成后，您就可以打开Visual Studio并开始处理tModPorter无法移植或留下带有说明的注释的代码部分（要查找所有注释，首先，转到工具 -> 选项 -> 环境 -> 任务列表，并添加`tModPorter`作为自定义标记。然后关闭它，打开视图 -> 任务列表将列出所有注释，您也可以使用搜索栏过滤特定注释）。随着1.4.4继续更新，如果更新破坏了某些内容，您可能需要再次"运行tModPorter"。
+
+## 本地化更改
+tModLoader最大的更改是本地化现在完全在`.hjson`本地化文件中完成。您**必须**遵循[从1.4.3迁移到1.4.4](https://github.com/tModLoader/tModLoader/wiki/Localization#migrating-from-143-to-144)说明。未执行此步骤将使移植模组变得非常繁琐。更多详情请参见[本地化更改详情](#本地化更改详情)。
+
+## 新原版功能
+Terraria 1.4.4有许多新功能。更改。[1.4.4更新日志](https://terraria.wiki.gg/wiki/1.4.4)详细介绍了这些更改。模组制作者应该意识到这些更改，以防它们影响其模组的平衡或功能。例如，`NPC`现在默认可以有20个buff，`Player`默认可以有44个buff。
+
+特别值得注意的是Shimmer，模组制作者应该考虑其模组的内容如何与Shimmer互动。[ExampleMod](https://github.com/tModLoader/tModLoader/search?utf8=%E2%9C%93&q=shimmer+path:ExampleMod&type=Code)包含各种shimmer功能的示例，如转换NPC、解构示例和转换物品。
+
+### 其他原版更改
+* `ModWaterStyle`现在需要一个额外的纹理`_Slope`。请参阅`ExampleWaterStyle`了解详情。
+* `GrantPrefixBenefits`仅在`Item.accessory`为`true`时调用。这现在也适用于模组配件槽。
+* 重新定义现在通过`Item.ResetPrefix`实现。这将`prefix`设置为0然后刷新物品。确保不由自定义前缀设置的自定义字段不是独立序列化的。
+
+## 重命名或移动的成员
+本节中的所有更改将由tModPorter处理，此处列出以供完整参考。模组制作者可以跳过本节，直接进入[重大变更概念](#重大变更概念)查看需要模组制作者对模组进行重大更改的更改。
+
+### 命名空间/类
+* `GameContent.UI.ResourceSets.HorizontalBarsPlayerReosurcesDisplaySet` -> `GameContent.UI.ResourceSets.HorizontalBarsPlayerResourcesDisplaySet`
+
+### 静态方法
+* `NetMessage.SendObjectPlacment` -> `NetMessage.SendObjectPlacement`
+
+### 静态字段/常量/属性
+* `ID.TileID.Sets.TouchDamageSands` -> `ID.TileID.Sets.Suffocate`
+* `ID.TileID.Sets.TouchDamageOther` -> `ID.TileID.Sets.TouchDamageImmediate`可能还有`ID.TileID.Sets.TouchDamageBleeding`
+* `ID.TileID.Sets.TouchDamageVines` -> `ID.TileID.Sets.TouchDamageImmediate`和`ID.TileID.Sets.TouchDamageDestroyTile`
+* `DustID.Fire` -> `DustID.Torch`
+* `MessageID.SendNPCBuffs` -> `MessageID.NPCBuffs`
+* `MessageID.Unlock` -> `MessageID.LockAndUnlock`
+* `MessageID.StartPlaying` -> `MessageID.InitialSpawn`
+* `MessageID.SpawnBoss` -> `MessageID.SpawnBossUseLicenseStartEvent`
+* `MessageID.Teleport` -> `MessageID.TeleportEntity`
+* `MessageID.ClientHello` -> `MessageID.Hello`
+* `MessageID.LoadPlayer` -> `MessageID.PlayerInfo`
+* `MessageID.RequestWorldInfo` -> `MessageID.RequestWorldData`
+* `MessageID.RequestTileData` -> `MessageID.SpawnTileData`
+* `MessageID.StatusText` -> `MessageID.StatusTextSize`
+* `MessageID.FrameSection` -> `MessageID.TileFrameSection`
+* `MessageID.SpawnPlayer` -> `MessageID.PlayerSpawn`
+* `MessageID.PlayerHealth` -> `MessageID.PlayerLifeMana`
+* `MessageID.TileChange` -> `MessageID.TileManipulation`
+* `MessageID.MenuSunMoon` -> `MessageID.SetTime`
+* `MessageID.ChangeDoor` -> `MessageID.ToggleDoorState`
+* `MessageID.UnusedStrikeNPC` -> `MessageID.UnusedMeleeStrike`
+* `MessageID.StrikeNPC` -> `MessageID.DamageNPC`
+* `MessageID.PlayerPVP` -> `MessageID.TogglePVP`
+* `MessageID.HealEffect` -> `MessageID.PlayerHeal`
+* `MessageID.PlayerZone` -> `MessageID.SyncPlayerZone`
+* `MessageID.ResetItemOwner` -> `MessageID.ReleaseItemOwnership`
+* `MessageID.PlayerTalkingNPC` -> `MessageID.SyncTalkNPC`
+* `MessageID.ItemAnimation` -> `MessageID.ShotAnimationAndSound`
+* `MessageID.MurderSomeoneElsesProjectile` -> `MessageID.MurderSomeoneElsesPortal`
+* `Main.fastForwardTime` -> 移除，使用`IsFastForwardingTime()`、`fastForwardTimeToDawn`或`fastForwardTimeToDusk`
+* 以下所有从`Terraria.WorldGen`更改为`Terraria.WorldBuilding.GenVars`：`configuration`、`structures`、`copper`、`iron`、`silver`、`gold`、`copperBar`、`ironBar`、`silverBar`、`goldBar`、`mossTile`、`mossWall`、`lavaLine`、`waterLine`、`worldSurfaceLow`、`worldSurface`、`worldSurfaceHigh`、`rockLayerLow`、`rockLayer`、`rockLayerHigh`、`snowTop`、`snowBottom`、`snowOriginLeft`、`snowOriginRight`、`snowMinX`、`snowMaxX`、`leftBeachEnd`、`rightBeachStart`、`beachBordersWidth`、`beachSandRandomCenter`、`beachSandRandomWidthRange`、`beachSandDungeonExtraWidth`、`beachSandJungleExtraWidth`、`shellStartXLeft`、`shellStartYLeft`、`shellStartXRight`、`shellStartYRight`、`oceanWaterStartRandomMin`、`oceanWaterStartRandomMax`、`oceanWaterForcedJungleLength`、`evilBiomeBeachAvoidance`、`evilBiomeAvoidanceMidFixer`、`lakesBeachAvoidance`、`smallHolesBeachAvoidance`、`surfaceCavesBeachAvoidance2`、`maxOceanCaveTreasure`、`numOceanCaveTreasure`、`oceanCaveTreasure`、`skipDesertTileCheck`、`UndergroundDesertLocation`、`UndergroundDesertHiveLocation`、`desertHiveHigh`、`desertHiveLow`、`desertHiveLeft`、`desertHiveRight`、`numLarva`、`larvaY`、`larvaX`、`numPyr`、`PyrX`、`PyrY`、`jungleOriginX`、`jungleMinX`、`jungleMaxX`、`JungleX`、`jungleHut`、`mudWall`、`JungleItemCount`、`JChestX`、`JChestY`、`numJChests`、`tLeft`、`tRight`、`tTop`、`tBottom`、`tRooms`、`lAltarX`、`lAltarY`、`dungeonSide`、`dungeonLocation`、`dungeonLake`、`crackedType`、`dungeonX`、`dungeonY`、`lastDungeonHall`、`maxDRooms`、`numDRooms`、`dRoomX`、`dRoomY`、`dRoomSize`、`dRoomTreasure`、`dRoomL`、`dRoomR`、`dRoomT`、`dRoomB`、`numDDoors`、`DDoorX`、`DDoorY`、`DDoorPos`、`numDungeonPlatforms`、`dungeonPlatformX`、`dungeonPlatformY`、`dEnteranceX`、`dSurface`、`dxStrength1`、`dyStrength1`、`dxStrength2`、`dyStrength2`、`dMinX`、`dMaxX`、`dMinY`、`dMaxY`、`skyLakes`、`generatedShadowKey`、`numIslandHouses`、`skyLake`、`floatingIslandHouseX`、`floatingIslandHouseY`、`floatingIslandStyle`、`numMCav...[省略356字符]`
+* `WorldGen.houseCount` -> `WorldBuilding.GenVars.skyIslandHouseCount`
+
+### 非静态方法
+* `UI.UIElement.MouseDown` -> `UI.UIElement.LeftMouseDown`
+* `UI.UIElement.MouseUp` -> `UI.UIElement.LeftMouseUp`
+* `UI.UIElement.Click` -> `UI.UIElement.LeftClick`
+* `UI.UIElement.DoubleClick` -> `UI.UIElement.LeftDoubleClick`
+* `Player.VanillaUpdateEquip` -> 移除，使用`GrantPrefixBenefits`（如果是`Item.accessory`）或`GrantArmorBenefits`（用于护甲槽）
+* `Player.IsAValidEquipmentSlotForIteration` -> `Player.IsItemSlotUnlockedAndUsable`
+* `Item.DefaultToPlacableWall` -> `Item.DefaultToPlaceableWall`
+
+### 非静态字段/常量/属性
+* `UI.UIElement.OnMouseDown` -> `UI.UIElement.OnLeftMouseDown`
+* `UI.UIElement.OnMouseUp` -> `UI.UIElement.OnLeftMouseUp`
+* `UI.UIElement.OnClick` -> `UI.UIElement.OnLeftClick`
+* `UI.UIElement.OnDoubleClick` -> `UI.UIElement.OnLeftDoubleClick`
+* `Player.discount` -> `Player.discountAvailable`
+* `Item.canBePlacedInVanityRegardlessOfConditions` -> `Item.hasVanityEffects`
+
+### 其他更改
+
+### tModLoader更改
+以下包含对tModLoader成员的较小规模更改。更详细的更改（即围绕IEntitySource的内容）在下面单独处理
+
+* `ModTile.OpenDoorID`移除，使用`TileID.Sets.OpenDoorID`代替
+* `ModTile.CloseDoorID`移除，使用`TileID.Sets.CloseDoorID`代替
+* `NPCSpawnInfo.PlanteraDefeated`移除，使用`(NPC.downedPlantBoss && Main.hardMode)`代替
+* `ModNPC.ScaleExpertStats` -> `ModNPC.ApplyDifficultyAndPlayerScaling`，参数更改。`bossLifeScale` -> `balance`（`bossAdjustment`不同，请参阅文档了解详情）
+* `GlobalNPC.ScaleExpertStats` -> `GlobalNPC.ApplyDifficultyAndPlayerScaling`，参数更改。`bossLifeScale` -> `balance`
+* `ModNPC.CanTownNPCSpawn`参数更改，如果要计算钱，复制`NPC.SpawnAllowed_Merchant`的实现，并确保在解锁时设置标志，这样就不会每tick计算
+* `ModItem.SacrificeTotal` -> `Item.ResearchUnlockCount`
+* `ModItem.OnCreate` -> `ModItem.OnCreated`
+* `GlobalItem.OnCreate` -> `GlobalItem.OnCreated`
+* `ModItem.CanBurnInLava` -> 使用`ItemID.Sets.IsLavaImmuneRegardlessOfRarity`或将对`On_Item.CheckLavaDeath`的hook方法
+* `GlobalItem.CanBurnInLava` -> 使用`ItemID.Sets.IsLavaImmuneRegardlessOfRarity`或将对`On_Item.CheckLavaDeath`的hook方法
+* `ModItem.ExtractinatorUse`参数更改
+* `GlobalItem.ExtractinatorUse`参数更改
+* `Player.QuickSpawnClonedItem` -> `Player.QuickSpawnItem`
+* `ModPlayer.clientClone` -> 重命名为`CopyClientState`并将`Item.Clone`用法替换为`Item.CopyNetStateTo`
+* `ModPlayer.PlayerConnect`参数更改
+* `ModPlayer.PlayerDisconnect`参数更改
+* `ModPlayer.OnEnterWorld`参数更改
+* `ModPlayer.OnRespawn`参数更改
+* `ModTree.GrowthFXGore` -> `ModTree.TreeLeaf`
+* `Terraria.DataStructures.BossBarDrawParams.LifePercentToShow`移除，使用`Life / LifeMax`代替
+* `Terraria.DataStructures.BossBarDrawParams.ShieldPercentToShow`移除，使用`Shield / ShieldMax`代替
+* `ModBossBar.ModifyInfo`生命值和护盾当前值和最大值现在是分开的，以允许hp/shield数字文本绘制
+* `ModItem/GlobalItem.ModifyHitNPC/OnHitNPC/ModifyHitPvp/OnHitPvp` -> 参见下面的玩家/NPC伤害hooks重新设计
+* `ModNPC/GlobalNPC.HitEffect/ModifyHitPlayer/OnHitPlayer/ModifyHitNPC/OnHitNPC/ModifyHitByItem/OnHitByItem/ModifyHitByProjectile/OnHitByProjectile/ModifyIncomingHit/ModifyCollisionData/StrikeNPC` -> 参见下面的玩家/NPC伤害hooks重新设计
+* `ModProjectile/GlobalProjectile.ModifyHitNPC/OnHitNPC/ModifyHitPlayer/OnHitPlayer/ModifyDamageScaling` -> 参见下面的玩家/NPC伤害hooks重新设计
+* `ModPlayer.ModifyHurt/OnHurt/PostHurt/ModifyHitNPCWithItem/OnHitNPCWithItem/ModifyHitNPCWithProj/OnHitNPCWithProj/ModifyHitByNPC/OnHitByNPC/ModifyHitByProjectile/OnHitByProjectile/CanHitNPC/ModifyHitNPC/OnHitNPC/PreHurt/Hurt` -> 参见下面的玩家/NPC伤害hooks重新设计
+* `ModProjectile.SingleGrappleHook` -> 在`SetStaticDefaults`中，如果以前此方法返回true，使用`ProjectileID.Sets.SingleGrappleHook[Type] = true`
+* `GlobalProjectile.SingleGrappleHook` -> 在`SetStaticDefaults`中，如果以前此方法返回true，使用`ProjectileID.Sets.SingleGrappleHook[Type] = true`
+* `ModPrefix.AutoStaticDefaults` -> 不再需要覆盖任何内容。使用hjson文件和/或覆盖DisplayName来调整本地化
+* `ModPrefix.ValidateItem` -> `ModPrefix.AllStatChangesHaveEffectOn`
+* `ModSystem.SetLanguage` -> 使用`OnLocalizationsLoaded`。新hook在稍不同的时间调用，请阅读文档
+* `ModSystem.ModifyWorldGenTasks`参数更改
+* `ModLoader.ItemCreationContext` -> `DataStructures.ItemCreationContext`
+* `ModLoader.RecipeCreationContext` -> `DataStructures.RecipeItemCreationContext`
+* `ModLoader.InitializationContext` -> `ModLoader.InitializationItemCreationContext`
+* `Terraria.Recipe.Condition` -> `Terraria.Condition`
+* `Condition.InGraveyardBiome` -> `Condition.InGraveyard`
+* `Item.IsCandidateForReforge`移除，使用`maxStack == 1 || Item.AllowReforgeForStackableItem`或`Item.Prefix(-3)`检查物品是否可重新定义
+* `Item.CloneWithModdedDataFrom`移除，使用`Clone`、`ResetPrefix`或`Refresh`
+* `ModLoader.Mod.CreateTranslation`移除，使用`Localization.Language.GetOrRegister`。请参阅下面的[本地化更改详情](#本地化更改详情)。
+* `ModLoader.Mod.AddTranslation`移除，使用`Localization.Language.GetOrRegister`。请参阅下面的[本地化更改详情](#本地化更改详情)。
+* `ModLoader.ModTranslation`移除，使用`Localization.LocalizedText`代替。请参阅下面的[本地化更改详情](#本地化更改详情)。
+* `InfoDisplay.InfoName` -> `InfoDisplay.DisplayName`
+* `InfoDisplay.DisplayValue` -> 建议：如果您的显示值为"零"或显示无价值信息，将displayColor设置为InactiveInfoTextColor
+* `DamageClass.ClassName` -> `DamageClass.DisplayName`
+* `GlobalTile.Drop/CanDrop`和`ModTile.Drop/CanDrop` -> 这些方法发生了巨大变化。请参阅[瓦片掉落更改](#瓦片掉落更改)了解更多信息。
+* `ModTile.ChestDrop` -> 现在使用`ItemDrop`，如果需要。请参阅[瓦片掉落更改](#瓦片掉落更改)了解更多信息。
+* `ModTile.DresserDrop` -> 现在使用`ItemDrop`，如果需要。请参阅[瓦片掉落更改](#瓦片掉落更改)了解更多信息。
+* `ModTile.ContainerName` -> 移除，改写`DefaultContainerName`代替
+* `TileLoader.ContainerName` -> `TileLoader.DefaultContainerName`，参数更改
+* `ModBuff.ModifyBuffTip` -> `ModBuff.ModifyBuffText`，参数更改
+* `GlobalBuff.ModifyBuffTip` -> `GlobalBuff.ModifyBuffText`，参数更改
+* `ModNPC/GlobalNPC.DrawTownAttackSwing` -> 参数更改
+* `ModNPC/GlobalNPC.DrawTownAttackGun` -> 参数更改。`closeness`现在是`horizontalHoldoutOffset`，使用`horizontalHoldoutOffset = Main.DrawPlayerItemPos(1f, itemtype) - originalClosenessValue`调整更改。请参阅文档了解如何使用带物品类型的hook。
+* `ModNPC/GlobalNPC.SetupShop` -> `ModifyActiveShop`。商店发生了巨大变化，请参阅[商店更改](#商店更改也称为声明式商店)了解更多信息。
+* `ModNPC.OnChatButtonClicked` -> 参数更改
+* `ModNPC.ModifyActiveShop` -> 参数更改。商店发生了巨大变化，请参阅[商店更改](#商店更改也称为声明式商店)了解更多信息。
+* `GlobalNPC.ModifyActiveShop` -> 参数更改。商店发生了巨大变化，请参阅[商店更改](#商店更改也称为声明式商店)了解更多信息。
+* `ModPylon.GetNPCShopEntry` -> 参数更改。商店发生了巨大变化，请参阅[商店更改](#商店更改也称为声明式商店)了解更多信息。
+* `ModPylon.IsPylonForSale` -> `ModPylon.GetNPCShopEntry`，请参阅ExamplePylonTile的示例。要注册到特定NPC商店，直接在ModNPC.AddShop、GlobalNPC.ModifyShop或ModSystem.PostAddRecipes中使用新商店系统
+* `ModItem/GlobalItem.PreReforge`返回类型从`bool`更改为`void`，不再用于防止重新定义。使用`CanReforge`代替该目的。
+* `Player.CanBuyItem`移除，使用`Player.CanAfford`代替。请注意，该方法将不再错误地尝试消耗自定义货币。
+* `Player.rocketDamage` -> `Player.specialistDamage`
+* `AmmoID.Sets.IsRocket` -> `AmmoID.Sets.IsSpecialist`
+* `ModPrefix.GetTooltipLines`添加。一些模组制作者可能希望将前缀特定的工具提示行从`GlobalItem.ModifyTooltips`移到这里以获得更好的代码可维护性。
+* `Mods.{ModName}.TownNPCMood.{NPCName}.*`本地化条目重新定位到`Mods.{ModName}.NPCs.{NPCName}.TownNPCMood.*`。请参阅[PR 3446](https://github.com/tModLoader/tModLoader/pull/3446)中的移植说明了解更多详情。
+* `ModItem.AutoLightSelect`移除。请参阅[PR 3479](https://github.com/tModLoader/tModLoader/pull/3479)了解如何适应此更改的更多信息。
+* `Player.BiomeTorchPlaceStyle`和`Player.BiomeCampfirePlaceStyle`参数更改
+
+## 重大变更概念
+
+### 本地化更改详情
+[Issue 3074](https://github.com/tModLoader/tModLoader/pull/3074)包含提议的更改。
+[PR 3101](https://github.com/tModLoader/tModLoader/pull/3101/files)包含实际更改以及ExampleMod更改。
+[PR 3302](https://github.com/tModLoader/tModLoader/pull/3302)包含特定于`ModConfig`的其他更改。
+[本地化](https://github.com/tModLoader/tModLoader/wiki/Localization)解释本地化并为模组制作者提供移植说明。
+[贡献本地化](https://github.com/tModLoader/tModLoader/wiki/Contributing-Localization)包含翻译者和翻译模组制作者的说明。
+
+**简短摘要：**
+* 翻译现在完全在本地化文件（.hjson文件）中。例如，`ModItem.DisplayName`和`ModItem.Tooltip`不能再在代码中赋值。
+* `ModConfig`现在默认完全可本地化。（请参阅[PR #3302](https://github.com/tModLoader/tModLoader/pull/3302)了解更多信息）
+* 本地化文件会自动更新新内容并由tModLoader管理。更多组织选项可用。
+  * 新内容将在加载后出现在本地化文件中。对.hjson文件的编辑将被tModLoader检测到，并在保存时立即加载到游戏中，允许模组制作者和翻译者快速测试和更新翻译。
+* 所有`ModTranslation`用法现在都被`LocalizedText`替换
+* 所有翻译键现在遵循更可预测的模式：`Mods.ModName.Category.ContentName.DataName`
+* 直接或通过翻译模组贡献翻译已被简化。
+
+**移植说明：**
+* 模组制作者**必须**在尝试在`1.4.4` tModLoader上更新模组之前，遵循wiki上的[本地化指南](https://github.com/tModLoader/tModLoader/wiki/Localization)中的**从1.4.3迁移到1.4.4**部分。
+* 本地化文件中有硬编码值的模组制作者，如"10%增加近战伤害"、"5护甲穿透"等，应考虑更新其代码以通过遵循[将值绑定到本地化](https://github.com/tModLoader/tModLoader/wiki/Localization#binding-values-to-localizations)部分来减少重复
+  * [ExampleStatBonusAccessory](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Items/Accessories/ExampleStatBonusAccessory.cs)展示了我们推荐的编写清晰和可维护物品工具提示的方法。在示例中，表示配饰效果的所有数字只存在于代码中，而不是在代码和翻译文件中。最值得注意的是，使用这种新方法，工具提示和实际行为不同步的风险为零。以前，模组制作者可以更新配饰但忘记更新工具提示，或忘记为其他语言更新工具提示，导致物品行为与其声称的行为不同。
+  * [AbsorbTeamDamageBuff](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Buffs/AbsorbTeamDamageBuff.cs)、[AbsorbTeamDamageAccessory](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Items/Accessories/AbsorbTeamDamageAccessory.cs)和[ExampleDamageModificationPlayer](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Common/Players/ExampleDamageModificationPlayer.cs)进一步构建了这个想法。在这些示例中，实际伤害吸收统计`DamageAbsorptionPercent`（设置为30）只存在于`AbsorbTeamDamageAccessory`中。`AbsorbTeamDamageBuff`通过`public override LocalizedText Description => base.Description.WithFormatArgs(AbsorbTeamDamageAccessory.DamageAbsorptionPercent);`引用buff工具提示中的值。`AbsorbTeamDamageAccessory`也在自己的工具提示中引用该值。`ExampleDamageModificationPlayer`也通过`ModifyHurt`和`OnHurt`中的`DamageAbsorptionMultiplier`属性引用该值。如果模组制作者希望将此配饰更改为吸收35%的伤害而不是30%，模组制作者只需要在一个地方更改值，而不是在多个.cs和.hjson文件中的多个地方更改。这展示了正确使用本地化文件并将值绑定到其中的强大功能。
+* `ModConfig`现在默认是本地化的，请参阅[PR #3302](https://github.com/tModLoader/tModLoader/pull/3302)的移植说明部分了解特定于`ModConfig`的移植信息。
+
+### 玩家/NPC伤害hooks重新设计。Hit/HurtModifiers和Hit/HurtInfo
+[PR 3212](https://github.com/tModLoader/tModLoader/pull/3212)、[PR 3355](https://github.com/tModLoader/tModLoader/pull/3355)和[PR 3359](https://github.com/tModLoader/tModLoader/pull/3359)彻底改变了玩家和NPC命中hooks的结构。
+
+**简短摘要：**
+玩家和NPC命中hooks（`OnHit`、`ModifyHit`、`OnHitBy`等）通过通用架构简化，并添加了许多新功能。
+
+此更改的目的是通过使伤害计算成为显式方程来提高模组兼容性，在方程中模组贡献修饰符，tModLoader计算结果。
+
+添加了许多关于如何制作命中/伤害修改配饰和武器效果的示例，演示新系统。
+* [ExampleDodgeBuff](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Buffs/ExampleDodgeBuff.cs)/ExampleDamageModificationPlayer: `ConsumableDodge`示例，类似于
+* [ExampleDefenseDebuff](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Buffs/ExampleDefenseDebuff.cs): 乘法防御debuff，类似于破碎护甲
+* [AbsorbTeamDamageAccessory](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Items/Accessories/AbsorbTeamDamageAccessory.cs)/AbsorbTeamDamageBuff/ExampleDamageModificationPlayer: 伤害吸收示例，类似于圣教骑士盾牌物品。
+* [HitModifiersShowcase](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Items/Weapons/HitModifiersShowcase.cs): 新`ModifyHitNPC`和`OnHitNPC` hooks的广泛示例。禁用伤害变化、修改击退、修改暴击奖励伤害、平面护甲穿透、百分比护甲穿透等示例。
+* [ExampleWhipDebuff](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Buffs/ExampleWhipDebuff.cs)和ExampleWhipAdvancedDebuff: 显示正确的标签伤害，平面和缩放品种。
+* [PartyZombie](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/NPCs/PartyZombie.cs): 显示对特定伤害类别"抵抗"的NPC，受到的伤害更少
+* [ExampleAdvancedFlailProjectile](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Projectiles/ExampleAdvancedFlailProjectile.cs): 显示ModifyDamageScaling替换，以及各种`HitModifiers`字段和属性以动态缩放伤害和击退的正确用法。
+* [ExamplePaperAirplaneProjectile](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Projectiles/ExamplePaperAirplaneProjectile.cs): 显示处理对其脆弱的NPC造成奖励伤害的抛射物。
+
+tModPorter将能够转换hook签名，但您需要阅读移植说明（特别是FAQ），以弄清楚如何将旧伤害修改代码转换到新系统。
+
+**移植说明：**
+太多了，无法在此写，请运行tModPorter后如有疑问请阅读PR描述。
+
+### 商店更改（也称为声明式商店）
+[PR 3219](https://github.com/tModLoader/tModLoader/pull/3219)改变了NPC商店的制作方式。
+
+**简短摘要：**
+* NPC商店现在是声明式的，意味着它们被注册，物品可以添加条件，类似于NPC掉落（战利品）和配方
+* 向商店添加物品或从商店隐藏物品现在像添加或禁用配方一样容易
+* 信息模组可以遍历NPCShopDatabase以显示如何获取物品。所有物品出现在商店的条件都已本地化。
+* 每次NPC聊天时选择要打开的商店现在可以通过OnChatButtonClicked中的ref string shop参数完成
+
+**移植说明：**
+* `ModPylon.IsPylonForSale`已被`ModPylon.GetNPCShopEntry`替换。请参阅文档和[ExamplePylonTile](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Tiles/ExamplePylonTile.cs)
+* `Mod/GlobalNPC.SetupShop`现在是`ModifyActiveShop`。此hook仍然存在以允许自定义商店修改，但您应该考虑迁移到新的`ModNPC.AddShops`和`GlobalNPC.ModifyShop` hooks
+* `ModifyActiveShop`中的`Item[]`现在将包含null条目。这区分了未填充的槽和有意留空的槽（如DD2调酒师的情况）
+* 请查看PR中Example Mod的更改以更容易理解新系统。
+
+### 瓦片掉落更改
+[PR 3210](https://github.com/tModLoader/tModLoader/pull/3210)改变了瓦片掉落物品的方式。
+
+**简短摘要：**
+* 瓦片和墙壁现在自动掉落放置它们的物品。此过程支持多样式瓦片。
+* 方块交换功能现在支持模组火把、箱子和抽屉。
+* 其他杂项修复。
+
+**移植说明：**
+* 绝大多数`ModTile.KillMultitile`代码和`ModTile.Drop`代码可以通过遵循移植说明删除或简化。
+* 任何具有`ModTile`的模组都必须遵循移植说明，未能为此重大更改调整代码将导致重复掉落。
+* 更改太多，无法在此写。请在运行tModPorter后阅读[拉取请求](https://github.com/tModLoader/tModLoader/pull/3210)中的移植说明。
+
+### 改进Player.clientClone性能
+[PR 3174](https://github.com/tModLoader/tModLoader/pull/3174)为`Player.clientClone`添加了新方法以提高性能。
+
+**简短摘要：**
+`Item.Clone`对于许多模组来说可能非常性能昂贵。只有类型、堆叠和前缀才需要判断物品是否已更改并需要重新同步。
+
+此PR用`Item.CopyNetStateTo`替换了`Player.clientClone`中对`Item.Clone`的用法。此外，单个Player（和`ModPlayer`）实例在所有`clientClone`/`CopyClientState`调用中被重用，充当"存储副本"而不是每帧创建一个新的。
+
+请注意，tModPorter不够智能，无法自动识别`ModPlayer.CopyClientState`调用中对`Item.Clone`的用法。您需要自己替换这些，否则将在运行时抛出异常。
+
+**移植说明：**
+* `ModPlayer.clientClone` -> `ModPlayer.CopyClientState`
+* 在`ModPlayer.CopyClientState`中使用`Item.CopyNetStateTo`而不是`Item.Clone`
+* 在`ModPlayer.SendClientChanges`中使用`Item.IsNetStateDifferent`而不是`Item.IsNotSameTypePrefixAndStack`
+* 通过`CopyNetStateTo`更改的Item实例未初始化！不要尝试从它们读取属性或检索`ModItem`或`GlobalItem`实例。对使用`CopyNetStateTo`更新的`Item`唯一有效的操作是`IsNetStateDifferent`
+
+[HoldStyleShowcase](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Items/HoldStyleShowcase.cs)、[HitModifiersShowcase](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Items/Weapons/HitModifiersShowcase.cs)和[UseStyleShowcase](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Items/UseStyleShowcase.cs)简要展示了`Item.NetStateChanged();`的用法以触发物品同步。
+
+### 最大生命值和魔力值操作API
+[PR 2909](https://github.com/tModLoader/tModLoader/pull/2909)大大改变了修改玩家最大生命值和魔力值的API，渲染在玩家心心和星星上方的自定义精灵，甚至添加了用于创建自定义显示集的API。
+
+**简短摘要：**
+* 添加了带有`StatModifier`参数的`ModPlayer.ModifyMaxStats`，用于永久调整最大生命值/魔力值
+  * 虽然此hook旨在用于永久stat调整，但它也可以轻松支持临时调整
+  * 但请注意，此hook在玩家更新逻辑中非常早地运行。它在`ModPlayer.ResetEffects`之后不久运行
+    * 依赖于配饰或其他由护甲影响的玩家变量的临时调整的buff仍应使用`ModPlayer`中的旧方法修改`Player.statLifeMax2`
+* 添加了`Player.ConsumedLifeCrystals`、`ConsumedLifeFruit`和`ConsumedManaCrystals`属性
+  * 这些属性直接绑定到原版stat增加，也可以由模组制作者手动设置
+* 添加了辅助方法`Player.UseHealthMaxIncreasingItem`和`Player.UseManaMaxIncreasingItem`用于显示视觉效果
+* 添加了`ModResourceDisplaySet`，允许自定义生命/魔力绘制样式（类似于boss bar样式），可以在设置中选择
+* 添加了`ModResourceOverlay`以允许在原版（或模组）生命/魔力UI元素上绘制自定义心心/魔力/效果
+
+ExampleMod包含[自定义显示集](https://github.com/tModLoader/tModLoader/tree/1.4.4/ExampleMod/Common/UI/ExampleDisplaySets)和[自定义资源覆盖](https://github.com/tModLoader/tModLoader/tree/1.4.4/ExampleMod/Common/UI/ResourceOverlay)的示例。
+
+[ExampleStatIncreasePlayer](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Common/Players/ExampleStatIncreasePlayer.cs)、[ExampleLifeFruit](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Items/Consumables/ExampleLifeFruit.cs)和[ExampleManaCrystal](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Items/Consumables/ExampleManaCrystal.cs)展示了如何处理永久stat增加。
+
+**移植说明：**
+* 请参阅`ExampleStatIncreasePlayer`、`ExampleLifeFruit`和`ExampleManaCrystal`了解如何正确设置永久stat增加
+* 对`Player.statLifeMax2`和`Player.statManaMax2`的临时stat增加仍可照常进行
+  * 虽然它们不应在`ModPlayer.ModifyMaxStats`中更改，因为那运行太早，更改不会被保留
+* 使用`Player.ConsumedLifeCrystals`、`Player.ConsumedLifeFruit`和`Player.ConsumedManaCrystals`代替检查`Player.statLifeMax`或`Player.statManaMax`，因为stat字段可以由模组调整
+
+## 较小更改
+### [PR 3063](https://github.com/tModLoader/tModLoader/pull/3063)：修复Quick Heal和Quick Mana消耗非消耗品
+**简短摘要：** 在Quick Heal和Quick Mana中添加`item.consumable`作为检查。
+**移植说明：** 对于Quick heal、Quick Mana非消耗品，建议使用`Item.consumable`字段而不是覆盖`ConsumeItem()`
+
+### [PR 3360](https://github.com/tModLoader/tModLoader/pull/3360)：添加ModSystem.ClearWorld
+**简短摘要：** 添加了ModSystem.ClearWorld，在世界清除时运行。新的清理/初始化世界相关数据结构的最佳位置。
+**移植说明：** 考虑用`ClearWorld`替换对`OnWorldLoad`的重写以重置世界相关数据。通常不再需要重写`OnWorldUnload`。如果您想完全清理所有内存，请使用Unload，但空列表无需担心。
+
+### [PR 3341](https://github.com/tModLoader/tModLoader/pull/3341)：统一Localized Conditions
+**简短摘要：** `Terraria.Recipe.Condition`已移至`Terraria.Condition`，现在可以应用于更多内容。配方、物品变体、掉落和商店。添加了`SimpleItemDropRuleCondition`类以帮助更轻松地制作掉落条件。
+**移植说明：** `Terraria.Recipe.Condition` -> `Terraria.Condition`（tModPorter）。从条件委托中删除了`Recipe`参数，因为它几乎从未使用过。自定义条件需要从`_ => calculation`或`recipe => calculation`更改为`() => calculation`
+
+### [提交56f6657](https://github.com/tModLoader/tModLoader/commit/56f66570219a66095120e64e7f0640d6ba0a6999)：更改HookGen命名空间样式
+**简短摘要：**
+* Hookgen命名空间（`IL.`和`On.`）已被移除，取而代之的是`On_`和`IL_`附加到类型名称。
+* 当您使用VS导入Terraria类型名称时，您将不再获得3个不同的命名空间建议。
+* 想要On Item hooks？只需使用`On_Item`，它在与`Item`相同的命名空间中！
+
+**移植说明：**
+* `On.Terraria.Player` -> `Terraria.On_Player`
+* `IL.Terraria.Player` -> `Terraria.IL_Player`
+* 和往常一样，tModPorter可以自动转换您的旧代码。
+
+### [PR 3242](https://github.com/tModLoader/tModLoader/pull/3242)：默认研究解锁值更改为1
+**简短摘要：**
+* 所有物品现在默认需要1个物品进行研究。
+* 以前的值0使物品无法研究，因为许多模组制作者不打扰实现旅程模式功能
+* 模组制作者可以清理他们的代码：
+  * `ModItem.SacrificeTotal`已被移除，tModPorter应该已将其更改为`Item.ResearchUnlockCount`。
+  * `CreativeItemSacrificesCatalog.Instance.SacrificeCountNeededByItemId[Type] = #;`行可以更改为`Item.ResearchUnlockCount = #;`
+  * 具有`Item.ResearchUnlockCount = 1;`或`CreativeItemSacrificesCatalog.Instance.SacrificeCountNeededByItemId[Type] = 1;`行的`ModItem`可以删除，因为默认值是1。
+
+**移植说明：**
+* 这几乎完全是可选的。唯一的是`ModItem`应该永远不在背包中存在，或者否则不应该可研究的，现在需要添加`Item.ResearchUnlockCount = 0;`（注意：`CreativeItemSacrificesCatalog.Instance.SacrificeCountNeededByItemId[Type] = 0;`将导致错误，使用`Item.ResearchUnlockCount = 0;`）
+* 模组制作者可以考虑利用此机会添加与原版值匹配的研究值到他们的`ModItem`：[旅程模式研究wiki页面](https://terraria.wiki.gg/wiki/Journey_Mode#Research)。

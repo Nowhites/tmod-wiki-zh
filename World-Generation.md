@@ -1,0 +1,841 @@
+# 什么是世界生成？
+世界生成是以编程方式放置和移除世界中的瓷砖的过程。世界生成在两个地方进行：世界创建期间和游戏中。本指南的绝大部分将集中在世界创建期间的世界生成，但也会详细介绍游戏中需要考虑的事项。
+
+世界生成是一个相当复杂的主题，需要对许多主题有很好的理解才能有效地工作。建议在直接跳入代码之前熟悉以下部分。此外，强烈建议使用具有编辑和继续支持的IDE（如Visual Studio）。
+
+# 目录
+* [术语](#术语)
+* [预备知识](#预备知识)
+* [调试世界生成](#调试世界生成)
+* [测试完整通道](#测试完整通道)
+* [代码设置](#代码设置)
+* [确定合适的索引](#确定合适的索引)
+* [确定起始位置](#确定起始位置)
+* [常见模式](#常见模式)
+* [游戏内/多人游戏注意事项](#游戏内多人游戏注意事项)
+* [贴印瓷砖](#贴印瓷砖)
+* [过程语法](#过程语法)
+* [有用的方法](#有用的方法)
+* [IL编辑](#il编辑)
+
+# 术语
+## 通道、步骤和任务
+当世界被生成时，游戏按顺序运行每个通道。在本指南中，术语"步骤"指的是组成一个通道的各个代码段。世界生成由"通道"组成，通道由"步骤"组成。例如，一个创建生物群落的通道可能由2个步骤组成，第一步是挖掘洞穴，第二步是放置树木。术语"任务"可能等同于"通道"，但我们将在本指南中避免使用该术语，因为"任务"有另一个含义，我们稍后会在指南中需要用到。
+
+# 预备知识
+## 瓷砖坐标
+世界的最左上角位于瓷砖坐标的`0, 0`，右下角位于`Main.maxTilesX, Main.maxTilesY`。这些坐标直接映射到`Main.tile[,]`。有关更多信息，请参阅[坐标](https://github.com/tModLoader/tModLoader/wiki/Coordinates)。按照惯例，我们在代码中使用`x`和`y`或`i`和`j`表示瓷砖坐标。我们需要多对变量，因为很多时候我们使用的是从其他坐标派生出来的坐标。
+
+## Main.tile[,]
+`Main.tile[,]`是一个包含世界中所有瓷砖的二维数组。你可以通过写`Tile tile = Main.tile[x, y];`在世界生成期间直接访问特定`x`和`y`坐标处的`Tile`结构。请注意，尝试访问坐标为负数或超出世界范围的瓷砖将导致错误。为避免此问题，请在使用`Main.tile[x, y]`之前使用[`WorldGen.InWorld`](https://github.com/tModLoader/tModLoader/wiki/World-Generation#terrariaworldgen-public-static-bool-inworldint-x-int-y-int-fluff--0)方法确保坐标有效。
+
+## Tile类
+`Tile`结构包含它所代表的瓷砖位置的所有数据。最重要的字段是`TileType`和`WallType`，它们分别表示该位置存在的瓷砖和墙壁类型。有关`Tile`结构的各种字段和方法的更多详细信息，请参阅[Tile结构文档](http://docs.tmodloader.net/docs/stable/struct_tile.html)。
+
+## 框架瓷砖 vs 框架重要瓷砖
+重要的是要记住泰拉瑞亚中的瓷砖有两种基本类型。有像泥土、矿石和石头这样的普通地形瓷砖，也有像树木、铁砧、画框等不是地形的瓷砖。地形瓷砖被称为"框架"瓷砖，因为游戏会根据附近的瓷砖调整它们的外观。例如，将宝石火花块放置在现有宝石火花块瓷砖旁边会改变原始宝石火花块的外观，使它们看起来像单个矿石矿床。
+![](https://i.imgur.com/pR6ZCUX.png)
+其他瓷砖，被称为"框架重要"或多重瓷砖，具有不会改变的定义外观。需要知道的重要一点是，用其他框架瓷砖替换框架瓷砖很容易，只需将`Tile.type`设置为新的瓷砖类型即可。尝试手动放置框架重要瓷砖或替换它们要困难得多。
+
+## 框架
+框架是游戏调整`Tile.TileFrameX`和`Tile.TileFrameY`值以根据上下文调整瓷砖外观的过程。在世界生成代码中，你不需要担心框架，因为游戏在加载世界时自动框架所有瓷砖。如果你在游戏中更改瓷砖，你确实需要告诉游戏框架附近的瓷砖。[ExampleSolution.cs](https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Content/Items/Ammo/ExampleSolution.cs#L93)显示了一个需要瓷砖框架和同步的情况。
+这是一个未框架瓷砖的示例。在这个示例中，所有宝石火花块的`tile.TileFrameX`和`tile.TileFrameY`值都是0。如果你在游戏中看到像这样的瓷砖，那么你就有buggy代码。
+![](https://i.imgur.com/ap0wDKH.png)
+这是瓷砖框架后的结果。
+![](https://i.imgur.com/N5pRkQi.png)
+在这里我们可以看到瓷砖如何使用`TileFrameX`和`TileFrameY`来确定要绘制精灵图的哪个部分。例如，用红色勾勒的瓷砖的`TileFrameX`值为36，`TileFrameY`值为0，意味着这个瓷砖绘制从像素坐标36,0开始的16x16部分。右边的图像是这个瓷砖的精灵图，彩色矩形显示为指示的瓷砖绘制的精灵图部分。
+![](https://i.imgur.com/K9kRYXI.png)
+
+# 调试世界生成
+测试世界生成代码可能非常耗时。首先你必须进行代码更改，构建并重新加载模组，等待世界完成生成，然后探索新生成的世界查看最终结果。这个过程可以简化，使编写和测试世界生成代码更高效。
+
+为了更高效，有一个可以快速进行代码测试的环境是有益的。本指南中显示的短视频和图片都是通过一个设置实现的，该设置允许在游戏中编辑源代码，在游戏中手动触发世界生成步骤，并撤销世界更改。这个设置不是必需的，但可以使编写和测试世界生成代码减少猜测，变得更加高效。
+
+在盲目测试完整通道之前，测试一个通道的各个步骤是一个好主意。从小开始，慢慢扩大测试范围。例如，要测试一个添加矿石的通道，首先使用以下过程测试一个单独的`WorldGen.TileRunner`执行以获得正确的参数。一旦它工作了，单独测试完整的通道以验证矿石的频率是否正确。然后你可以添加额外的逻辑来控制矿石的放置，并测试它是否正常工作。最后，如果需要，在真实的世界生成场景中测试通道以确保它完全工作。
+
+## 设置
+
+1. 下载并启用以下模组：[HEROs Mod](https://steamcommunity.com/sharedfiles/filedetails/?id=2564645933)和[Modders Toolkit](https://steamcommunity.com/sharedfiles/filedetails/?id=2573569299)
+2. 将以下代码添加到你的项目中，确保修复命名空间。你可以在熟悉这个过程后替换`WorldGen.TileRunner`方法：
+```cs
+using Terraria;
+using Terraria.ModLoader;
+using Microsoft.Xna.Framework.Input;
+using Terraria.ID;
+using Microsoft.Xna.Framework;
+using Terraria.GameContent.Generation;
+
+namespace WorldGenTutorial
+{
+	public class WorldGenTutorialWorld : ModSystem
+	{
+		public static bool JustPressed(Keys key) {
+			return Main.keyState.IsKeyDown(key) && !Main.oldKeyState.IsKeyDown(key);
+		}
+
+		public override void PostUpdateWorld() {
+			if (JustPressed(Keys.D1))
+				TestMethod((int)Main.MouseWorld.X / 16, (int)Main.MouseWorld.Y / 16);
+		}
+
+		private void TestMethod(int x, int y) {
+			Dust.QuickBox(new Vector2(x, y) * 16, new Vector2(x + 1, y + 1) * 16, 2, Color.YellowGreen, null);
+
+			// Code to test placed here:
+			WorldGen.TileRunner(x - 1, y, WorldGen.genRand.Next(3, 8), WorldGen.genRand.Next(2, 8), TileID.CobaltBrick);
+		}
+	}
+}
+```
+3. 确保关闭tModLoader，然后开始[调试你的模组](https://github.com/tModLoader/tModLoader/wiki/Learn-How-To-Debug#debugger-debugging)。模组构建后，tModLoader将启动。当tModLoader启动时，打开一个你不在意的世界。将Visual Studio放在屏幕的一侧，将tModLoader放在窗口模式下的另一侧：
+![](https://i.imgur.com/Kzb5okk.png)
+4. 在`HEROs Mod`中，点击"禁用敌人生成"按钮，设置"Light Hack"为"100%"，开启"God Mode"和"Reveal Map"。这些设置将让你专注于测试。
+![](https://i.imgur.com/JWli67V.png)
+5. 启用`HEROs Mod`后，右键点击全屏地图会将玩家传送。传送到你最终希望放置世界生成代码的典型区域。
+6. 如果你正在测试的代码具有破坏性，使用Modders Toolkit的Miscellaneous Tool中的"Take World Snapshot"按钮来保存世界的副本。（按钮在屏幕右下角附近）
+![](https://i.imgur.com/n1y9U9n.png)
+7. [设置一个断点](https://github.com/tModLoader/tModLoader/wiki/Learn-How-To-Debug#breakpoint)在你希望试验的代码行上。点击你希望试验的行号边距来设置断点：
+![](https://i.imgur.com/HScfJgs.png)
+8. 重复以下步骤
+	1. 将鼠标悬停在你要测试的瓷砖上，然后按键盘上的`1`键。
+	2. Visual Studio将立即获得焦点，因为它命中了我们设置的断点。这将通过"行号边距"中的黄色箭头来指示：
+![](https://i.imgur.com/AwwumIK.png)
+	3. 现在你可以编辑代码。如果这是你第一次，只需按`F5`继续。否则，在黄色箭头处或下方更改变量和其他逻辑。完成更改后按`F5`继续。
+    4. 回到tModLoader，你应该会看到一个短暂的尘埃方块表示你运行代码的坐标。你也会看到代码的效果。
+    5. 如果世界生成代码是破坏性的，按"Restore World Snapshot"按钮。更改应该被撤销。
+    6. 如果你代码的效果是你想要的，恭喜，你现在有了你想在世界生成通道中使用的代码的好主意。你可以复制代码并适当使用。否则，重复这些步骤，直到你发现做你想做的事情的参数和值。
+
+## 通过实验学习
+许多可用于世界生成的方法根本没有文档。我们可以使用上面的设置来发现`WorldGen.DigTunnel`的用法。
+
+首先，让我们把`WorldGen.TileRunner`换成`WorldGen.DigTunnel`。接下来，让我们查看参数名称并猜测一些合适的值。对于`X`和`Y`，我们可以猜测它可能是询问一些瓷砖坐标。`xDir`和`yDir`可能影响方向，我们可以将它们留在0。`Steps`和`Size`可能需要非零数字，让我们从1开始。
+![](https://i.imgur.com/y2G32nd.png)
+
+现在我们有了一些代码，我们将执行上面的步骤并测试我们的代码。每次我们看到结果时，我们可以再次命中断点后编辑代码以查看更改的效果，从而了解参数的含义。一旦我们知道含义，我们就有了在 actual world generation steps 中使用`WorldGen.DigTunnel`方法所需的知识。
+
+使用`WorldGen.digTunnel(x, y, 0, 0, 1, 1, false);`，我们得到一个小洞：
+![](https://i.imgur.com/z7BSgC2.png)
+让我们尝试`Size`，这里是`WorldGen.digTunnel(x, y, 0, 0, 1, 10, false);`的结果，我们可以看到`Size`似乎影响一个半径：
+![](https://i.imgur.com/3ayQmwm.png)
+让我们尝试`Steps`，这里是`WorldGen.digTunnel(x, y, 0, 0, 10, 1, false);`的结果。目前还不清楚这个参数有什么影响，我们可能需要与其他参数结合测试：
+![](https://i.imgur.com/ettJNfj.png)
+让我们尝试`Steps`、`xDir`和`yDir`。从阅读`WorldGen.DigTunnel`的原版代码用法，我们可以看到`xDir`和`yDir`通常是-1到1之间的数字，所以让我们尝试`WorldGen.digTunnel(x, y, 1, 1, 10, 1, false);`。现在我们可以看到`xDir`和`yDir`似乎影响瓷砖被挖出的方向（在本例中是向下和向右，因为那是正x和y坐标），而`Steps`似乎表示这个挖掘过程应该迭代多少次。
+![](https://i.imgur.com/JtJ70jF.png)
+通过我们从实验中获得的对参数的 knowledge，让我们尝试制作一个向下延伸的长洞。我的猜测是高`yDir`、高`Steps`和中等`Size`会做我们想要的。让我们尝试`WorldGen.digTunnel(x, y, 0, 1, 30, 3, false);`：
+![](https://i.imgur.com/gGcTkc4.png)
+看起来不错。我希望这个实验已经展示了如何在游戏中实时测试代码片段来帮助破译方法和参数的含义。如果你有信心，你也可以阅读源代码。
+
+## 高级代码设置
+如果你真的想快速迭代测试参数，你可以...
+
+### SkipSelect
+模组开发者可以使用[-skipselect](https://github.com/tModLoader/tModLoader/wiki/Command-Line#skipselect)命令行参数直接加载游戏到特定世界。如果你要频繁关闭和加载游戏，这可能很有用。
+
+### Modders Toolkit Quick Tweak
+`TODO`：使用`Quick Tweak`工具更快迭代参数选择的说明。
+
+# 测试完整通道
+如果你对一个通道中的各个步骤满意，你需要通过生成一个新世界并查看结果是否令人满意来测试完整的通道。在这个阶段，你应该调整控制世界生成结构生成数量的东西。使用[WorldGen Previewer mod](https://steamcommunity.com/sharedfiles/filedetails/?id=2843258712)将有助于可视化你的生物群落和结构在世界中的普及程度。请注意，玩家将与其他模组一起游戏，所以尽量不要用你的结构覆盖世界。罕见的让你感觉像真实发现的世界生成特征会让玩家兴奋。
+
+# 代码设置
+现在你已经学习了预备知识并有了高效的环境，现在是时候学习世界生成代码的基本布局了。设置代码放在扩展`ModSystem`的类中，实际的世界生成代码放在从`GenPass`扩展的类中。这个例子将涵盖生成矿石，这是简单但常见的愿望。请跟随阅读并阅读注释。注意这两个类在同一个文件中，但如果你喜欢这种组织方式，它们可以很容易地分成单独的文件。
+
+```cs
+// 1. 你需要各种using语句。如果缺少，Visual Studio会建议这些，但大多数都列在这里了。
+using Terraria;
+using Terraria.ModLoader;
+using Terraria.ID;
+using Terraria.GameContent.Generation;
+using System.Collections.Generic;
+using Terraria.WorldBuilding;
+using Terraria.IO;
+using Terraria.Localization;
+
+namespace WorldGenTutorial
+{
+	// 2. 我们的世界生成代码必须从一个扩展ModSystem的类开始
+	public class WorldGenTutorialSystem : ModSystem
+	{
+		// 3. 这些行设置了世界生成期间显示的消息的本地化。构建并重新加载模组后更新你的本地化文件以为此提供值。
+		public static LocalizedText WorldGenTutorialOresPassMessage { get; private set; }
+
+		public override void SetStaticDefaults() {
+			WorldGenTutorialOresPassMessage = Language.GetOrRegister(Mod.GetLocalizationKey($"WorldGen.{nameof(WorldGenTutorialOresPassMessage)}"));
+		}
+
+		// 4. 我们使用ModifyWorldGenTasks方法来告诉游戏我们的世界生成代码应该运行的顺序
+		public override void ModifyWorldGenTasks(List<GenPass> tasks, ref double totalWeight) {
+			// 5. 我们使用FindIndex来定位名为"Shinies"的原版世界生成任务的索引。这确保了我们的代码在正确的步骤运行。
+			int ShiniesIndex = tasks.FindIndex(genpass => genpass.Name.Equals("Shinies"));
+			if (ShiniesIndex != -1) {
+				// 6. 我们通过传入我们自定义GenPass类的实例来注册我们的世界生成通道。GenPass类将执行我们的世界生成代码。
+				tasks.Insert(ShiniesIndex + 1, new WorldGenTutorialOresPass("World Gen Tutorial Ores", 100f));
+			}
+		}
+	}
+
+	// 7. 确保从GenPass类继承。
+	public class WorldGenTutorialOresPass : GenPass
+	{
+		public WorldGenTutorialOresPass(string name, float loadWeight) : base(name, loadWeight) {
+		}
+
+		// 8. ApplyPass方法是放置实际世界生成代码的地方。
+		protected override void ApplyPass(GenerationProgress progress, GameConfiguration configuration) {
+			// 9. 设置进度消息总是一个好主意。这是用户在 world generation 期间看到的消息，可以帮助用户和模组开发者识别卡住的通道。
+			progress.Message = WorldGenTutorialSystem.WorldGenTutorialOresPassMessage.Value;
+
+			// 10. 这里我们使用for循环来运行循环内的代码多次。这个for循环缩放到Main.maxTilesX、Main.maxTilesY和2E-05的乘积。2E-05是科学记数法，等于0.00002。在处理大量零时，有时科学记数法更容易阅读。
+			// 11. 在一个小世界中，这个数学结果是4200 * 1200 * 0.00002，大约是100。这意味着我们将运行for循环内的代码100次。这是Crimtane或Demonite将生成的数量。因为我们通过两个维度缩放，所以矿石的数量会自动调整到不同的世界大小，以获得一致的矿石分布。
+			for (int k = 0; k < (int)((Main.maxTilesX * Main.maxTilesY) * 6E-05); k++) {
+				// 12. 我们随机选择一个x和y坐标。x坐标从最左到最右坐标中选择。然而，y坐标是从GenVars.worldSurfaceLow和地图底部之间选择的。我们可以使用这种技术来确定我们的矿石应该生成的深度。
+				int x = WorldGen.genRand.Next(0, Main.maxTilesX);
+				int y = WorldGen.genRand.Next((int)GenVars.worldSurfaceLow, Main.maxTilesY);
+
+				// 13. 最后，我们做实际的世界生成代码。在这个例子中，我们使用WorldGen.TileRunner方法。这个方法生成我们提供给方法的瓷砖类型的光斑。TileRunner的行为在下面的"有用方法"部分详细说明。
+				WorldGen.TileRunner(x, y, WorldGen.genRand.Next(3, 6), WorldGen.genRand.Next(2, 6), TileID.CobaltBrick);
+			}
+		}
+	}
+}
+```
+如你所见，`ModifyWorldGenTasks`用于注册你的每个世界生成通道。每个`GenPass`类有一个`ApplyPass`方法，可以对世界进行一些编辑。我们将我们的通道插入原版世界生成通道顺序中，以确保我们的代码在适当的时候执行。
+
+## 添加额外的世界生成代码
+要添加更多的世界生成代码，首先确定你希望添加到现有通道的步骤，还是希望创建一个新通道。如果通道与现有通道没有有意义的联系，或者如果现有模组或原版通道的顺序要求代码存在于其他地方，则创建新通道很有用。
+
+例如，如果我们希望在世界中生成箱子，你不能在生成矿石的相同通道中做到这一点，因为矿石在FrameImportant瓷砖生成之前生成。太早生成矿石会腐败放置太早的箱子。如果你正在制作一个生物群落，挖掘洞穴的代码和放置地形的代码可以共存于同一个通道中。
+
+如果我们想生成额外的矿石，我们可以简单地将另一个for循环添加到上面显示的`WorldGenTutorialOresPass.ApplyPass`方法中，并调整数字以适应新的矿石。这被称为向通道添加步骤。
+
+如果我们想放置箱子，我们将类似以下的代码添加到`ModifyWorldGenTasks`中：
+```cs
+int BuriedChestsIndex = tasks.FindIndex(genpass => genpass.Name.Equals("Buried Chests"));
+if (BuriedChestsIndex != -1) {
+	tasks.Insert(BuriedChestsIndex + 1, new WorldGenTutorialChestsPass("World Gen Tutorial Chests", 100f));
+}
+```
+然后也添加`WorldGenTutorialChestsPass`类。确保不要弄乱C#语法：
+```cs
+public class WorldGenTutorialChestsPass : GenPass
+{
+	public WorldGenTutorialChestsPass(string name, double loadWeight) : base(name, loadWeight) {
+	}
+
+	protected override void ApplyPass(GenerationProgress progress, GameConfiguration configuration) {
+		// Chest placement code here
+	}
+}
+```
+
+## 调试注意事项
+如果你使用的是上面描述的调试设置，我们需要进一步分解我们的代码以方便测试和实验。在这里我们可以看到`PlaceOresAtLocation`可以从`PostUpdate`中的热键代码和我们的世界生成步骤`WorldGenTutorialOres`调用，允许代码被独立测试。
+```cs
+// 在WorldGenTutorialSystem类中
+public override void PostUpdateWorld() {
+	if (JustPressed(Keys.D1))
+		WorldGenTutorialOresPass.PlaceOresAtLocation((int)Main.MouseWorld.X / 16, (int)Main.MouseWorld.Y / 16);
+}
+
+// 在WorldGenTutorialOresPass类中
+protected override void ApplyPass(GenerationProgress progress, GameConfiguration configuration) {  
+	progress.Message = WorldGenTutorialSystem.WorldGenTutorialOresPassMessage.Value;
+
+	for (int k = 0; k < (int)((Main.maxTilesX * Main.maxTilesY) * 6E-05); k++) {
+		int x = WorldGen.genRand.Next(0, Main.maxTilesX);
+		int y = WorldGen.genRand.Next((int)GenVars.worldSurfaceLow, Main.maxTilesY);
+
+		PlaceOresAtLocation(x, y);
+	}
+}
+
+// 同样在WorldGenTutorialOresPass类中
+// PlaceOresAtLocation在我们的调试热键代码WorldGenTutorialSystem.PostUpdateWorld和世界生成步骤WorldGenTutorialOresPass.ApplyPass方法之间共享。
+// 我们使这个方法为static，以便它可以直接访问。这允许我们在游戏中快速测试这部分代码，但也在世界生成步骤中使用代码。
+internal static void PlaceOresAtLocation(int x, int y) {
+	WorldGen.TileRunner(x, y, WorldGen.genRand.Next(3, 6), WorldGen.genRand.Next(2, 6), TileID.CobaltBrick);
+}
+```
+
+# 确定合适的索引
+查阅[原版世界生成通道](https://github.com/tModLoader/tModLoader/wiki/Vanilla-World-Generation-Steps)找到插入你的世界生成通道的合适位置。在类似的世界生成通道之后立即做类似的代码通常是一个好规则。一些早期通道不考虑多重瓷砖，所以避免太早放置箱子或其他多重瓷砖。同样的概念适用于各种地形整形方法，因为在太晚的阶段执行此类方法有可能破坏已经放置的多重瓷砖，导致它们损坏或不完整。
+
+**注意：** 不要在你的`task.Insert`行之上分组多个`FindIndex`调用。这是因为`task.Insert`会更改通道的索引，使其他`FindIndex`值无效。如果你这样做，索引可能会错误。
+这里是一个由在错误步骤运行代码引起的潜在问题的示例。这里我们看到TileRunner代码已经破坏了多重瓷砖，如门、箱和其他装饰瓷砖：
+![](https://i.imgur.com/TBJgsag.png)
+
+## 原版世界生成时间线
+本节列出了世界生成期间发生的各种重要事件，这些事件将帮助你为一般世界生成通道识别合适的索引：
+
+* 地下世界：
+* 生成点：`Main.spawnTileX`和`Main.spawnTileY`被分配
+* TODO - 找到重要通道：大型地形编辑的最后机会，如何避免破坏箱子等
+
+# 确定起始位置
+大多数世界生成步骤随机选择一个坐标开始。我们可以通过调整这个初始坐标的选择来调整世界生成代码的分布。
+
+## 随机
+我们使用`WorldGen.genRand.Next`方法选择一个随机数。重要的是为你所有的随机决定使用`WorldGen.genRand`，因为它促进了世界种子功能。
+
+## 宽度
+TODO：地图中心、生成点周围的安全区、海洋位置
+
+## 深度
+从上到下，这里是世界生成期间可用的深度：`0, Worldgen.worldSurfaceLow, Worldgen.worldSurfaceHigh, Worldgen.rockLayerLow, Worldgen.rockLayerHigh, Main.maxTilesY`。通过调整提供给`WorldGen.genRand.Next`方法的最小值和最大值，我们可以告诉游戏我们希望矿石生成的深度范围。以下是来自游戏的铜矿石生成代码，它使用3个具有不同参数和循环乘数的独立for循环，使矿石沉积物在你越深处越大越频繁：
+
+```cs
+for (int i = 0; i < (int)((double)(Main.maxTilesX * Main.maxTilesY) * 6E-05); i++) {
+	TileRunner(WorldGen.genRand.Next(0, Main.maxTilesX), WorldGen.genRand.Next((int)WorldGen.worldSurfaceLow, (int)WorldGen.worldSurfaceHigh), WorldGen.genRand.Next(3, 6), WorldGen.genRand.Next(2, 6), copper);
+}
+
+for (int i = 0; i < (int)((double)(Main.maxTilesX * Main.maxTilesY) * 8E-05); i++) {
+	TileRunner(WorldGen.genRand.Next(0, Main.maxTilesX), WorldGen.genRand.Next((int)WorldGen.worldSurfaceHigh, (int)WorldGen.rockLayerHigh), WorldGen.genRand.Next(3, 7), WorldGen.genRand.Next(3, 7), copper);
+}
+
+for (int i = 0; i < (int)((double)(Main.maxTilesX * Main.maxTilesY) * 0.0002); i++) {
+	TileRunner(WorldGen.genRand.Next(0, Main.maxTilesX), WorldGen.genRand.Next((int)WorldGen.rockLayerLow, Main.maxTilesY), WorldGen.genRand.Next(4, 9), WorldGen.genRand.Next(4, 8), copper);
+}
+```
+请注意，`WorldGen.rockLayerLow`和`Main.maxTilesY`之间的距离比其他两个范围大得多，所以矿石的分布不像`* 0.0002`所暗示的那么密集。
+
+还要注意，并非所有这些值都会持久保存到游戏中。例如，`Worldgen.worldSurfaceLow`和`Worldgen.worldSurfaceHigh`会被遗忘，只保留`Main.worldSurface`。`Main.worldSurface`等于`Worldgen.worldSurfaceHigh + 25.0`。确保如果你在做游戏内的世界生成代码，你引用的是实际加载的变量，你可以检查`Terraria.IO.WorldFile.LoadHeader`来双重检查。
+
+地下世界位于地图底部的200个瓷砖上。`Main.maxTilesY - 200`及以下将是地下世界坐标。
+
+## 生物群落
+我们可以检查随机坐标处的现有瓷砖来确定所选位置的生物群落。例如，如果我们只想在雪附近放置矿石，我们可以检查雪瓷砖：
+```cs
+Tile tile = Main.tile[x, y];
+if (tile.HasTile && tile.TileType == TileID.SnowBlock) {
+    // TileRunner code here
+}
+```
+在检查这样的条件时，重要的是要考虑你的循环计数器是在失败时增加还是保持不变。所有的随机坐标选择都可能不包含雪，世界可能不会受到你的代码的影响。另一方面，如果你重复你的世界生成代码直到找到雪特定次数，那么拥有少量雪的世界可能会不成比例地受到影响。在设计代码时要注意这种可能性。
+
+### 生成
+`Main.spawnTileX`和`Main.spawnTileY`表示默认生成位置。通常`Main.spawnTileX`在`Main.maxTilesX / 2`内的5个瓷砖内，但模组可以更改此设置。生成位置在"Spawn Point"通道中分配。
+
+### 地牢
+`Main.dungeonX`和`Main.dungeonY`指向地牢入口处的瓷砖，这些坐标在"Dungeon"通道期间生成。`GenVars.dungeonSide`也在同一通道中确定，如果地牢在世界左半部则为-1，当地牢在右半部时为1。
+![](https://i.imgur.com/BPxa6A0.png)
+
+### 神殿
+神殿位置没有存储在世界文件中，但如果你搜索所有瓷砖查找`TileID.LihzahrdAltar`或锁着的门，你可能能够找到它，但不能保证。
+
+TODO: On.makeTemple示例
+
+### 金字塔
+金字塔坐标也不会被记住。
+
+TODO: 使用反射检索通过闭包捕获的局部变量的FieldInfo示例。检索`PyrX`和`PyrY`。（检查编辑闭包变量是否可以修改原始捕获变量值）
+
+## 找到表面位置
+要找到表面坐标，你首先选择一个随机X坐标，然后从世界顶部开始检查所有瓷砖，直到找到第一个实心瓷砖。这是一个例子：
+```cs
+int x = WorldGen.genRand.Next(0, Main.maxTilesX);
+bool foundSurface = false;
+int y = 1;
+while (y < Main.worldSurface) {
+	if (WorldGen.SolidTile(x, y)) {
+		foundSurface = true;
+		break;
+	}
+	y++;
+}
+```
+在这个例子中，我们对照`Main.worldSurface`进行检查，以确保我们不会走得太深。这是为了确保你不会尝试在深坑中间生成表面生物群落。
+
+# 常见模式
+## 直到成功
+为许多世界生成操作找到合适的位置可能很困难。例如，放置一个箱子需要2个并排的实心瓷砖，上面有2x2的空间，没有任何瓷砖存在。编写一个搜索具有确切情况的代码是困难的，容易出错。虽然有时搜索特定上下文很有用，但以一种更懒惰的方式做世界生成代码是非常常见的。这种懒惰的方式是尝试在随机坐标上做某事，直到达到预期成功的次数。例如，如果你希望每个世界生成4个特殊箱子，你可能会在所需区域随机放置箱子，直到`PlaceChest`报告成功4次。当使用这种方法时，存在搜索区域不包含满足你条件的任何位置的可能性，所以限制尝试是有用的。如果你不限制尝试，你的代码可能会陷入无限循环。这个尝试限制应该足够大，不会过早失败，但足够小，不会导致世界生成暂停太久，使用户假设代码陷入无限循环。
+
+作为一个例子，让我们尝试在世界中放置10个箱子：
+```cs
+for (int i = 0; i < 10; i++) {
+	bool success = false;
+	int attempts = 0;
+	while (!success) {
+		attempts++;
+		if (attempts > 1000) {
+			break;
+		}
+		x = WorldGen.genRand.Next(0, Main.maxTilesX);
+		y = WorldGen.genRand.Next(0, Main.maxTilesY);
+		int chest = WorldGen.PlaceChest(x, y);
+		success = chest != -1;
+	}
+	if(success)
+		Main.NewText($"在{x}, {y}放置箱子，尝试了{attempts}次。");
+	else
+		Main.NewText($"尝试了{attempts}次后放置箱子失败。");
+}
+```
+在这个例子中，我们尝试放置10个箱子，给每个箱子1000次尝试。这是输出：
+![](https://i.imgur.com/aabvcti.png)
+在这里你可以看到，通过随机坐标，你通常可以在我们允许的1000次尝试内使用`WorldGen.PlaceChest`放置一个箱子。把1000增加到10000不是问题，但几乎可以保证10个箱子而不是这里显示的9个成功。电脑非常快，数万次放置尝试不是什么大问题。最重要的是允许你的循环在太多尝试后失败，你不希望你的世界生成代码陷入无限循环。
+
+## 影响所有瓷砖
+有时你想对所有瓷砖做某事。例如，将所有铁矿石瓷砖更改为MyCoolOre瓷砖。你可以这样做，但要注意应用这样的全局更改可能与其他模组的期望冲突。此外，在PostWorldGen或后期通道中做这个可能是最好的，因为允许其他查找这些瓷砖的代码先做它们的工作。要做到这一点，我们使用双重for循环：
+```cs
+for (int i = 0; i < Main.maxTilesX; i++) {
+	for (int j = 0; j < Main.maxTilesY; j++) {
+		Tile tile = Main.tile[i, j];
+		if (tile.TileType == TileID.Iron)
+			tile.TileType = (ushort)ModContent.TileType<MyCoolOre>();
+	}
+}
+```
+
+## 放置瓷砖实体
+TODO: 必须手动放置，因为它们不是以正常方式放置的
+
+## 在箱子中放置物品
+使用`PlaceChest`向世界添加箱子后，你可以通过访问`Chest`对象的`item`数组来添加物品。如果使用`AddBuriedChest`，`Chest`或箱子索引不会返回给调用者，所以如果你不搜索世界中的箱子就无法修改内容。
+
+### 在新箱子中放置物品
+以下示例显示了许多添加物品的方法。要记住的重要的事情是正确跟踪你正在编辑的物品槽的当前索引。这个例子在末尾添加所有物品来简化这个。
+```cs
+// 假设x和y瓷砖坐标已经分配或传入此方法。
+
+// 使用style 10放置箱子，这是Icy Chest样式
+int chestIndex = WorldGen.PlaceChest(x, y, style: 10);
+// 如果箱子成功放置...
+if(chestIndex != -1) {
+	Chest chest = Main.chest[chestIndex];
+	// itemsToAdd将保存我们想要添加到箱子的每个物品的类型和堆叠数据
+	var itemsToAdd = new List<(int type, int stack)>();
+
+	// 这里是一个使用WeightedRandom为不同物品选择不同权重的随机选择的例子。
+	int specialItem = new Terraria.Utilities.WeightedRandom<int>(
+		Tuple.Create((int)ItemID.Acorn, 1.0),
+		Tuple.Create((int)ItemID.Meowmere, 0.1),
+		Tuple.Create(ModContent.ItemType<MyItem>(), 1.0),
+		Tuple.Create((int)ItemID.None, 7.0) // 以高权重7选择无物品
+	);
+	if(specialItem != ItemID.None) {
+		itemsToAdd.Add((specialItem, 1));
+	}
+	// 使用switch语句和随机选择来添加一组物品。
+	switch (Main.rand.Next(4)) {
+		case 0: 
+			itemsToAdd.Add((ItemID.CobaltOre, Main.rand.Next(9, 15)));
+			break;
+		case 1:
+			itemsToAdd.Add((ItemID.Duck, 1));
+			break;
+		case 2:
+			itemsToAdd.Add((ItemID.FireblossomSeeds, Main.rand.Next(2, 5)));
+			break;
+		case 3:
+			itemsToAdd.Add((ItemID.Glowstick, Main.rand.Next(9, 15)));
+			itemsToAdd.Add((ItemID.Dynamite, Main.rand.Next(1, 3)));
+			itemsToAdd.Add((ItemID.Bomb, Main.rand.Next(3, 7)));
+			break;
+	}
+
+	// 最后，遍历itemsToAdd并实际创建Item实例并添加到chest.item数组
+	int chestItemIndex = 0;
+	foreach (var itemToAdd in itemsToAdd) {
+		Item item = new Item();
+		item.SetDefaults(itemToAdd.type);
+		item.stack = itemToAdd.stack;
+		chest.item[chestItemIndex] = item;
+		chestItemIndex++;
+		if (chestItemIndex >= 40)
+			break; // 确保不超过箱子的容量
+	}
+}
+```
+
+### 在其他现有箱子中放置物品
+ChestItemWorldGen.cs显示了在其他代码放置的箱子中放置单个物品的示例。[在冰冻箱子中放置一些物品](https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Common/Systems/ChestItemWorldGen.cs#L16)。如果你想放置多个物品，你也可以使用上面展示的技术，只要你确保遵循在箱子中找到空物品槽的逻辑，这样你就不会覆盖现有物品。
+
+## 液体
+液体与实际瓷砖共存于Tile结构中。
+
+许多大规模地形方法有可选参数，可以在结果地形中放置水。例如，`Worlgen.digTunnel`有一个`wet`参数，在挖掘后会在洞穴中填充一些水。在其他方法中寻找类似的参数。要手动放置单个水瓷砖，你可以通过写以下内容设置该瓷砖的液体类型和液体量：
+```cs
+Tile tile = Main.tile[x, y];
+tile.LiquidAmount = 255;
+tile.LiquidType = LiquidID.Water;
+```
+
+# 游戏内/多人游戏注意事项
+TODO:
+* 许多方法不是设计用于多人游戏使用的。
+* 关于如何同步瓷砖更改的示例。避免发送瓷砖更改的方法示例。
+* 过早离开时的存档损坏。（tModLoader需要WorldGen.IsGeneratingHardMode等效钩子）
+* 由于同步代码导致的服务器崩溃。（需要异步代码示例，线程静态警告）
+* 确保代码在服务器上运行
+
+## 长运行任务
+如果游戏内的世界生成任务需要超过一瞬间才能运行，用户将体验到卡顿。在单人游戏中游戏将冻结该时间，在多人游戏中服务器将冻结，导致同步问题。实现游戏内运行的世界生成代码的模组开发者需要意识到这一点，并相应地计划。使用本节教授的方法。生成新矿石、新生物群落或新结构都是可能被视为长运行的常见任务。请注意，本节不适用于困难模式期间的任务或正常世界生成期间的任务，那些是自动正确处理的。
+
+长运行任务需要在单独的线程上运行以避免导致卡顿。tModLoader中的大多数代码在主线程上运行，但这会导致问题，因为游戏循环也在主线程上。通过在主线程上运行世界生成任务，游戏将冻结相同的时间量。如果我们在单独的线程上运行任务，游戏可以像任务独立于游戏线程更新一样正常运行。
+
+要生成线程，只需调用`ThreadPool.QueueUserWorkItem`方法，方法或代码要运行：`ThreadPool.QueueUserWorkItem(_ => GenerateStuff());`。一如既往，确保在多人游戏中此代码在服务器上运行。[`ExampleOreSystem.BlessWorldWithExampleOre`](https://github.com/tModLoader/tModLoader/blob/1.4.4/ExampleMod/Content/Tiles/ExampleOre.cs#L55)方法显示了这方面的示例。该方法从`MinionBossBody.OnKill`调用，如果这是世界上该Boss的第一次被击败。
+
+# 贴印瓷砖
+有时模组希望将设计好的建筑或其他设计特征放置到世界中。编写代码手动放置每个瓷砖是相当麻烦的。有一种方法可以将选定的瓷砖"贴印"到世界中。它的工作方式是首先在游戏中设计结构，然后使用TODOMETHODNAME方法导出一个表示该选定瓷砖的二进制文件。你可以将该文件添加到你的模组并在世界生成通道中引用它。你可以使用TODOMETHODNAME方法将该文件转换为2D瓷砖数组。一旦你有了瓷砖，你可以找到一个合适的位置并将瓷砖复制到该位置，就像你将瓷砖贴印到该位置一样。当使用这种方法时，你可能需要努力确保所选位置与你放置的瓷砖良好合并。
+
+# 过程语法
+一种比典型世界生成代码更强大的方法可以在许多最近的原版代码世界生成添加中看到。这种方法使泰拉瑞亚更令人印象深刻的世界生成特征成为可能。活体红木树的有机流动和附魔剑圣地是好例子，展示了这种方法的强大之处。这种过程方法提供了一种将条件和动作更简洁、更不易出错地链接在一起的方法。语法可能不熟悉高级C#语法模式的人来说是令人困惑的，但一旦你掌握了它，这种方法可以非常强大和高效。
+
+## 快速示例
+作为这种方法的高速入门，这里有一个快速示例：
+```cs
+Point point = new Point(x, y);
+WorldUtils.Gen(point, new Shapes.Circle(8, 8), new Actions.SetTile(TileID.RubyGemspark));
+```
+这段代码可能令人生畏，但如果学会阅读它，它真的不太糟糕。基本上`WorldUtils.Gen`方法接受一个`Point`、`GenShape`和`GenAction`。从`Point`表示的坐标开始，`GenShape`的代码追踪所需形状，同时在每个这些坐标上运行`GenAction`代码。这段代码在圆圈内的每个坐标上运行`SetTile`方法，创建一个半径为8的填充RubyGemspark瓷砖的圆圈。
+![](https://i.imgur.com/JVrmts2.png)
+
+```cs
+Point point = new Point(x, y);
+WorldUtils.Gen(point, new Shapes.Circle(8, 4), Actions.Chain(new GenAction[]
+{
+	new Actions.SetTile(TileID.AmberGemspark),
+	new Actions.PlaceWall(WallID.BlueDynasty),
+	new Actions.Custom((i, j, args) => {Dust.QuickDust(new Point(i, j), Color.Purple); return true; }),
+}));
+```
+这个例子展示了使用`Actions.Chain`链接多个`GenAction`。我们放置AmberGemspark，放置Blue Dynasty墙，并生成紫色尘埃。尘埃只是为了帮助可视化可能受Shape提供的所有瓷砖。
+![](https://i.imgur.com/BrY4g31.png)
+
+## GenShape
+GenShapes用于指定动作发生的位置。诸如`Circle`和`Rectangle`之类的原版形状不言自明，其他的你可能需要实验。使用GenShape的一个好例子是`EnchantedSwordBiome`类。这个类负责世界生成代码的一般形状。
+
+以下是分别使用Mound、Slime和ShapeBranch GenShapes的例子：
+<br><img src="https://i.imgur.com/1TCTAcr.png" height=200>  <img src="https://i.imgur.com/33DZtoj.png" height=200>  <img src="https://i.imgur.com/cKSqWIq.png" height=200>
+
+### GenModShape
+从GenModShape继承的类使用输入`ShapeData`点来驱动它们的坐标。例如，`ModShapes.InnerOutline`可用于影响由`ShapeData`提供的一组点的内部轮廓。
+
+### 自定义GenShape
+继承GenShape可以使用自定义形状。
+```cs
+// World Gen Code
+Point point = new Point(x, y);
+WorldUtils.Gen(point, new AngularSpiral(8), new Actions.SetTile(TileID.RubyGemspark));
+WorldUtils.Gen(point, new AngularSpiral(8), new Actions.SetFrames());
+
+// Custom GenShape class
+public class AngularSpiral : GenShape
+{
+	private int radius;
+
+	public AngularSpiral(int radius) {
+		this.radius = radius;
+	}
+
+	public override bool Perform(Point origin, GenAction action) {
+		int i = 0;
+		int j = 0;
+		int dx = 0;
+		int dy = -1;
+		while(i <= radius && j <= radius) { 
+			if(-origin.X/2< i && i <= origin.X / 2 && -origin.Y / 2 < j && j <= origin.Y / 2)
+				if (!UnitApply(action, origin, origin.X + i, origin.Y + j) && _quitOnFail)
+					return false;
+			if(i == j || (i<0 && i == -j) || (i>0 && i == 2 - j))
+				(dx, dy) = (-dy, dx);
+			(i, j) = (i + dx, j + dy);
+		}
+		return true;
+	}
+}
+```
+
+![](https://i.imgur.com/628VJUY.png)
+
+## GenAction
+GenActions决定影响GenShape提供的坐标的代码。一些常见的动作包括`SetTile`来设置瓷砖类型，以及`Scanner`来计算GenShape的迭代次数。
+
+### Scanner
+`Scanner`可用于计算当前满足`Actions.Chain`条件条件的瓷砖数量。这对于查找大部分是某种条件或另一种的位置很有用。例如，如果你想找到一个90%实心瓷砖的位置，你可以将Scanner的结果与检查的瓷砖总数进行比较。这些示例展示了如何通过`Ref<int>`使用Scanner。这个示例也展示了`Actions.ContinueWrapper`，它允许将条件分离成子链，当它们失败时不会停止其他链。（通常当Action返回false时链会终止。）
+
+```cs
+Ref<int> anyCount = new Ref<int>(0);
+Ref<int> solidCount = new Ref<int>(0);
+Ref<int> notsolidCount = new Ref<int>(0);
+WorldUtils.Gen(point, new Shapes.Rectangle(10, 6), Actions.Chain(new GenAction[]
+{
+	new Actions.ContinueWrapper(Actions.Chain(new GenAction[]
+	{
+		new Modifiers.IsNotSolid(),
+		new Actions.Custom((i, j, args) => {Dust.QuickDust(new Point(i, j), Color.Purple); return true; }),
+		new Actions.Scanner(notsolidCount)
+	})),
+	new Actions.ContinueWrapper(Actions.Chain(new GenAction[]
+	{
+		new Modifiers.IsSolid(),
+		new Actions.Custom((i, j, args) => {Dust.QuickDust(new Point(i, j), Color.YellowGreen); return true; }),
+		new Actions.Scanner(solidCount)
+	})),
+	new Actions.Scanner(anyCount),
+}));
+Main.NewText($"任意 {anyCount.Value}, 实心 {solidCount.Value}, 非实心 {notsolidCount.Value}");
+```
+![](https://i.imgur.com/WAbJOhn.png)
+
+### TileScanner
+`TileScanner`在给定Shape中按类型计数瓷砖。`TileScanner`帮助计算位置是否适合放置，方法是检查附近瓷砖。它有助于避免与其他世界生成元素重叠，并有助于将世界生成要素放置在匹配确切期望位置的位置。以下示例使用`TileScanner`来检查测试区域中50%的瓷砖是石头还是泥土。通过调整我们的标准，我们可以保证我们世界生成元素的美观放置。
+```cs
+Point point = new Point(x, y);
+Dictionary<ushort, int> dictionary = new Dictionary<ushort, int>();
+WorldUtils.Gen(point, new Shapes.Rectangle(20, 10), new Actions.TileScanner(TileID.Dirt, TileID.Stone).Output(dictionary));
+int stoneAndDirtCount = dictionary[TileID.Dirt] + dictionary[TileID.Stone];
+// 20 * 10 == 200。这检查至少75%的区域是石头或泥土
+if (stoneAndDirtCount < 150)
+	Main.NewText($"位置不合适：{stoneAndDirtCount}/200");
+else
+	Main.NewText($"位置合适：{stoneAndDirtCount}/200");
+Dust.QuickBox(new Vector2(x, y) * 16, new Vector2(x + 20, y + 10) * 16, 20, Color.Orange, null);
+```
+![](https://i.imgur.com/qB3cKWv.png)
+
+### 自定义
+`Actions.Custom` `GenAction`允许执行任意代码。你想用GenAction做的大多数典型事情已经被现有类覆盖，但使用这个的一个例子是生成尘埃：
+```cs
+new Actions.Custom((i, j, args) => { Dust.QuickDust(new Point(i, j), Color.Red); return true; }),
+```
+
+### 自定义GenAction
+继承`GenAction`可用于在每个坐标上运行自定义代码。这里有一个叫做`ActionRope`的示例，模仿`ActionVines`。自定义GenAction类可以帮助组织可重用的代码部分。
+```cs
+public class ActionRope : GenAction
+{
+	private int _minLength;
+	private int _maxLength;
+	private int _vineId;
+
+	public ActionRope(int minLength = 6, int maxLength = 10, int vineId = TileID.Rope) {
+		_minLength = minLength;
+		_maxLength = maxLength;
+		_vineId = vineId;
+	}
+
+	public override bool Apply(Point origin, int x, int y, params object[] args) {
+		int num = GenBase._random.Next(_minLength, _maxLength + 1);
+		int i;
+		for (i = 0; i < num && !GenBase._tiles[x, y + i].HasTile; i++) {
+			GenBase._tiles[x, y + i].TileType = (ushort)_vineId;
+			GenBase._tiles[x, y + i].HasTile = true;
+		}
+
+		if (i > 0)
+			return UnitApply(origin, x, y, args);
+
+		return false;
+	}
+}
+
+// Usage Code. This code calls ActionRope 1 block below wood tiles. NotTouching and Dither make the placement a bit more random
+WorldUtils.Gen(point, new ModShapes.All(shapeData), Actions.Chain(
+	new Modifiers.OnlyTiles(TileID.WoodBlock), 
+	new Modifiers.Offset(0, 1), 
+	new Modifiers.NotTouching(true, TileID.Rope),
+	new Modifiers.Dither(0.5f),
+	new ActionRope(5, 9)
+));
+```
+![](https://i.imgur.com/hKiSdyz.png)
+
+## Modifier
+Modifiers是特殊的GenActions，限制随后链接的GenActions的执行。一个简单的例子是`Dither` Modifier。`Dither`随机终止动作链。在下面的示例中，圆圈内的所有瓷砖都会产生黄色尘埃，但Dither修饰符有20%的时间提前终止链，导致下面看到的破碎放置。
+
+```cs
+WorldUtils.Gen(point, new Shapes.Circle(8, 4), Actions.Chain(new GenAction[]
+{
+	new Actions.Custom((i, j, args) => {Dust.QuickDust(new Point(i, j), Color.Yellow); return true; }),
+	new Modifiers.Dither(.2),
+	new Actions.SetTile(TileID.AmberGemspark),
+}));
+```
+![](https://i.imgur.com/VaFSVf6.png)
+
+## Output
+`Output`可用于在特定GenAction记住一组坐标。在这个例子中，我们将2个独立Circles的输出到一个共享的`ShapeData`中。这个`ShapeData`被传递给`InnerOutline`，它计算哪些瓷砖从该数据形成内部轮廓。以这种方式，我们基本上组合了两个`GenShape`的结果，并使用这些结果来制作独特形状的Lava Moss瓷砖。
+```cs
+ShapeData shapeData = new ShapeData();
+WorldUtils.Gen(point, new Shapes.Circle(5, 5), new Actions.Blank().Output(shapeData));
+WorldUtils.Gen(point, new Shapes.Circle(3, 3), Actions.Chain(new GenAction[]
+{
+	new Modifiers.Offset(9, 0),
+	new Actions.Blank().Output(shapeData)
+}));
+WorldUtils.Gen(point, new ModShapes.InnerOutline(shapeData, true), new Actions.SetTile(TileID.LavaMoss, true));
+```
+![](https://i.imgur.com/MYGRYmt.png)
+
+## GenCondition
+`GenCondition`是确定区域或坐标是否满足条件的类。默认情况下，它们只检查提供的坐标，但可用于查找满足条件的区域。区域被测量为以提供的坐标为左上角的矩形。GenConditions通常与`WorldUtils.Find`结合使用，以找到步骤的合适位置。
+
+### AreaAnd
+通过用`AreaAnd`修改`GenCondition`，区域内的所有坐标都必须满足条件才被认为是成功。例如，`new Conditions.IsSolid().AreaAnd(6, 2)`检查6瓷砖宽2瓷砖高的区域是否都是实心的。
+
+### AreaOr
+`AreaOr`检查区域中是否有任何瓷砖满足条件。例如，`new Conditions.IsSolid().AreaOr(3, 1)`尝试确定3x1区域中是否有任何实心瓷砖。
+
+### Not
+`Not`可以应用于`AreaAnd`、`AreaOr`或没有区域的`GenCondition`。没有区域应用的`Not`将反转条件。例如，`new Conditions.IsSolid().Not()`只有当瓷砖不是实心的才会成功。应用于`AreaOr`的`Not`充当NOR运算，即区域中没有任何瓷砖满足条件。`new Conditions.IsSolid().Not().AreaOr(3, 5)`会尝试找到一个3x5区域，其中没有任何实心瓷砖。应用于`AreaAnd`的`Not`充当NAND运算，仅当并非所有瓷砖都满足条件时（即至少1个瓷砖不满足条件）才返回true。
+
+### Offset
+偏移GenConditions尚不支持。这意味着所有GenCondition在单个Find中将共享左上角。
+
+## Find
+`WorldUtils.Find`可用于搜索满足某些条件的位置。通过使用`Searches`和许多`GenCondition`，该方法尝试找到满足所有条件的坐标。`Searches.Down`指示Find从输入`Point`开始向下搜索最多20个瓷砖以寻找合适的位置。如果搜索成功则方法返回true。在这个例子中，条件尝试找到一个5x5的全是实心且是沙子的瓷砖区域。如果找到，在中间放置黑曜石。黄色尘埃显示发现匹配条件的区域。光标显示搜索从地上方开始，一直向下直到找到最终结果。
+```cs
+Point resultPoint;
+bool searchSuccessful = WorldUtils.Find(point, Searches.Chain(new Searches.Down(20), new GenCondition[]
+{
+	new Conditions.IsSolid().AreaAnd(5, 5),
+	new Conditions.IsTile(TileID.Sand).AreaAnd(5, 5),
+}), out resultPoint);
+if (searchSuccessful) {
+	Main.tile[resultPoint.X + 2, resultPoint.Y + 2].type = TileID.Obsidian;
+}
+```
+![](https://i.imgur.com/PX4D9oB.png)
+
+## 案例研究
+这里有一些复杂的例子，可以展示这种世界生成代码方法的全部潜力。
+### 附魔剑圣地
+附魔剑圣地的代码在`Terraria.GameContent.Biomes.EnchantedSwordBiome`类中找到。本节将检查`EnchantedSwordBiome`如何使用各种技术在一个合适的位置干净地生成圣地。请跟随评论和下面的视频。
+```cs
+public override bool Place(Point origin, StructureMap structures) {
+// 使用TileScanner，检查以origin为中心50x50区域大部分是泥土或石头
+Dictionary<ushort, int> tileDictionary = new Dictionary<ushort, int>();
+WorldUtils.Gen(new Point(origin.X - 25, origin.Y - 25), new Shapes.Rectangle(50, 50), new Actions.TileScanner(TileID.Dirt, TileID.Stone).Output(tileDictionary));
+if (tileDictionary[TileID.Dirt] + tileDictionary[TileID.Stone] < 1250)
+	return false; // 如果不是，返回false，这将导致调用方法尝试不同的origin
+
+Point surfacePoint;
+// 从origin向上搜索最多1000个瓷砖，查找50瓷砖高1瓷砖宽且没有实心瓷砖的区域。基本上找到表面。
+bool flag = WorldUtils.Find(origin, Searches.Chain(new Searches.Up(1000), new Conditions.IsSolid().AreaOr(1, 50).Not()), out surfacePoint);
+// 从origin到表面搜索，确保表面和origin之间没有沙子
+if (WorldUtils.Find(origin, Searches.Chain(new Searches.Up(origin.Y - surfacePoint.Y), new Conditions.IsTile(TileID.Sand)), out Point _))
+	return false;
+
+if (!flag)
+	return false;
+
+surfacePoint.Y += 50; // 调整结果指向表面，而不是表面上方50个瓷砖
+ShapeData slimeShapeData = new ShapeData();
+ShapeData moundShapeData = new ShapeData();
+Point point = new Point(origin.X, origin.Y + 20);
+Point point2 = new Point(origin.X, origin.Y + 30);
+float xScale = 0.8f + GenBase._random.NextFloat() * 0.5f; // 随机化圣地区域的宽度
+// 检查StructureMap在我们要放置圣地的预期区域没有任何现有冲突。
+if (!structures.CanPlace(new Rectangle(point.X - (int)(20f * xScale), point.Y - 20, (int)(40f * xScale), 40)))
+	return false;
+// 检查StructureMap在通往表面的竖井没有现有冲突
+if (!structures.CanPlace(new Rectangle(origin.X, surfacePoint.Y + 10, 1, origin.Y - surfacePoint.Y - 9), 2))
+	return false;
+// 使用Slime形状清除瓷砖。Blotches使边缘更有有机外观。 https://i.imgur.com/WtZaBbn.png
+WorldUtils.Gen(point, new Shapes.Slime(20, xScale, 1f), Actions.Chain(new Modifiers.Blotches(2, 0.4), new Actions.ClearTile(frameNeighbors: true).Output(slimeShapeData)));
+// 在切出的slime形状内放置一个泥土堆
+WorldUtils.Gen(point2, new Shapes.Mound(14, 14), Actions.Chain(new Modifiers.Blotches(2, 1, 0.8), new Actions.SetTile(TileID.Dirt), new Actions.SetFrames(frameNeighbors: true).Output(moundShapeData)));
+// 从slime坐标数据中删除堆坐标
+slimeShapeData.Subtract(moundShapeData, point, point2);
+// 在slime坐标数据的内部轮廓上放置草
+WorldUtils.Gen(point, new ModShapes.InnerOutline(slimeShapeData), Actions.Chain(new Actions.SetTile(TileID.Grass), new Actions.SetFrames(frameNeighbors: true)));
+// 在slime形状下半部分的空坐标中放置水
+WorldUtils.Gen(point, new ModShapes.All(slimeShapeData), Actions.Chain(new Modifiers.RectangleMask(-40, 40, 0, 40), new Modifiers.IsEmpty(), new Actions.SetLiquid()));
+// 在所有slime形状坐标上放置Flower墙。在所有草瓷砖下方1个瓷砖放置藤蔓。
+WorldUtils.Gen(point, new ModShapes.All(slimeShapeData), Actions.Chain(new Actions.PlaceWall(WallID.Flower), new Modifiers.OnlyTiles(TileID.Grass), new Modifiers.Offset(0, 1), new ActionVines(3, 5)));
+// 移除瓷砖以创建通往表面的竖井。将在竖井沿线的沙子瓷砖转换为硬沙瓷砖。
+ShapeData shaftShapeData = new ShapeData();
+WorldUtils.Gen(new Point(origin.X, surfacePoint.Y + 10), new Shapes.Rectangle(1, origin.Y - surfacePoint.Y - 9), Actions.Chain(new Modifiers.Blotches(2, 0.2), new Actions.ClearTile().Output(shaftShapeData), new Modifiers.Expand(1), new Modifiers.OnlyTiles(TileID.Sand), new Actions.SetTile(TileID.HardenedSand).Output(shaftShapeData)));
+WorldUtils.Gen(new Point(origin.X, surfacePoint.Y + 10), new ModShapes.All(shaftShapeData), new Actions.SetFrames(frameNeighbors: true));
+// 33%几率放置附魔剑圣地瓷砖
+if (GenBase._random.Next(3) == 0)
+	WorldGen.PlaceTile(point2.X, point2.Y - 15, TileID.LargePiles2, mute: true, forced: false, -1, 17);
+else
+	WorldGen.PlaceTile(point2.X, point2.Y - 15, TileID.LargePiles, mute: true, forced: false, -1, 15);
+// 在堆形状中的草瓷砖上方放置植物。
+WorldUtils.Gen(point2, new ModShapes.All(moundShapeData), Actions.Chain(new Modifiers.Offset(0, -1), new Modifiers.OnlyTiles(TileID.Grass), new Modifiers.Offset(0, -1), new ActionGrass()));
+// 添加到StructureMap以防止其他worldgen与此区域相交。
+structures.AddStructure(new Rectangle(point.X - (int)(20f * xScale), point.Y - 20, (int)(40f * xScale), 40), 4);
+return true;
+}
+```
+<details><summary>附魔剑圣地步骤视频</summary><blockquote>
+
+https://github.com/tModLoader/tModLoader/assets/4522492/00ded2ae-8cdb-47ec-a04e-3fa9fe1a4903
+
+</blockquote></details>
+
+# 有用的方法
+
+## [Terraria.WorldGen] public static void TileRunner(int i, int j, double strength, int steps, int type, bool addTile = false, float speedX = 0f, float speedY = 0f, bool noYChange = false, bool overRide = true)
+此方法从坐标（`x`和`y`为瓷砖坐标）开始放置指定瓷砖（`type`）的小光斑。此方法通常用于放置矿石或其他非FrameImportant瓷砖，如沙子、泥土或石头。类型的特殊值有特殊效果。`-1`会移除瓷砖而不是放置瓷砖，`-2`会做同样的事情，但如果坐标在熔岩线下方则添加熔岩。形状和大小由`strength`和`steps`参数控制。`strength`指导瓷砖光斑有多大，`steps`表示过程将重复多少次。例如，小`strength`和小`steps`会产生一个小光斑，大`strength`和小`steps`会产生一个大光斑，小`strength`和大`steps`会产生一个长但细的瓷砖路径。`speedX`和`speedY`驱动个别步骤路径的初始方向，但方法也会随机调整方向。`noYChange`为true时似乎在地表级别放置泥土墙，也有一些影响垂直变化的差异。`addTile`为true时在世界中放置额外的瓷砖。`overRide`为true时将现有瓷砖更改为指定瓷砖。
+TileRunner在`overRide`参数为`true`时使用多瓷砖的世界是不安全的，因为它会破坏它们。它在多人游戏中也不安全，因为它不会"框架"瓷砖也不会同步瓷砖更改。使用此方法的最新原版步骤是"Gems"步骤，所以使用`overRide`参数为`true`放置步骤的最新位置将在"Gems"步骤之后立即。如果你有一个不应该被矿石生成的瓷砖，请在那个ModTile上为那个瓷砖类型设置`TileID.Sets.CanBeClearedDuringGeneration[Type]`为false。由于多瓷砖不应该在TileRunner被调用时存在于世界中，你只需要为你不希望矿石渗透的地形瓷砖设置这个。
+
+<details><summary>TileRunner展示视频</summary><blockquote>
+
+https://github.com/tModLoader/tModLoader/assets/4522492/5a1c3078-252e-4b1b-96d8-defbe7daa1c4
+
+</blockquote></details>
+
+## [Terraria.WorldGen] public static void OreRunner(int i, int j, double strength, int steps, ushort type)
+类似于`TileRunner`，但没有很多选项。OreRunner从坐标（`x`和`y`为瓷砖坐标）开始放置指定瓷砖（`type`）的小光斑。OreRunner只替换活动的瓷砖，这些瓷砖要么是`TileID.Sets.CanBeClearedDuringOreRunner`，要么是`Main.tileMoss`，这使得它即使在世界中存在FrameImportant瓷砖后也可以使用。如果你有一个瓷砖，你应该设置`TileID.Sets.CanBeClearedDuringOreRunner`为`true`，以便在世界上生成额外矿石时被替换。原版代码只在生成困难模式矿石时使用此方法。此方法适用于游戏内和多人游戏，因为它既框架又同步瓷砖更改。
+
+## [Terraria.WorldGen] public static int PlaceChest(int x, int y, ushort type = 21, bool notNearOtherChests = false, int style = 0)
+此方法尝试在给定坐标处放置一个箱子。提供的坐标将是结果箱子的左下角，如果方法成功的话。`type`是要放置的瓷砖类型，`style`是要放置的样式类型。对于原版箱子，你可以从[提取的原版纹理](https://github.com/tModLoader/tModLoader/wiki/Intermediate-Prerequisites#vanilla-texture-file-reference)后从Tiles_21.png图像中从左边开始计数找到你想要的样式。`notNearOtherChests`可以设置为true，以防止如果在intended位置左侧或右侧25个瓷砖内和上下8个瓷砖内存在另一个箱子，则放置箱子。如果放置成功，此方法返回箱子的箱子索引，如果放置失败则返回-1。箱子放置可能因许多原因失败，例如如果现有瓷砖阻止了空间，或者如果在intended位置正下方没有2个合适的实心瓷砖。请参阅[直到成功](#try-until-success)获取使用此方法的方法。请参阅[在箱子中放置物品](#placing-items-in-chests)获取在箱子中放置物品的信息。
+![](https://i.imgur.com/CyAgVNp.png)
+
+## [Terraria.WorldGen] public static bool AddBuriedChest(int i, int j, int contain = 0, bool notNearOtherChests = false, int Style = -1)
+此方法尝试放置一个箱子，并根据样式和深度填充典型战利品。没有参数， 将创建一个 regular、gold 或 locked shadow 箱子，取决于深度。你可以传入一个物品类型作为`contain`，箱子中的第一个物品将是该物品。与`PlaceChest`不同，结果箱子将放置在给定坐标的右下角。此外，如果给定的`j`坐标不合适，AddBuriedChest将从给定坐标向下搜索找到它遇到的第一个实心瓷砖并尝试在那里放置。如果箱子成功放置，此方法返回true，但请注意箱子可能不在你提供的确切坐标处。这里是运行默认参数方法`WorldGen.AddBuriedChest(x, y);`的示例。注意箱子样式如何根据深度变化，以及如何尽可能地将箱子放置在提供坐标的正下方：
+<details><summary>AddBuriedChest展示视频</summary><blockquote>
+
+https://github.com/tModLoader/tModLoader/assets/4522492/d2243d92-a3fb-400c-9e5c-d1412a6073cc
+
+</blockquote></details>
+
+请参阅[在箱子中放置物品](placing-items-in-chests)获取在箱子中放置物品的信息。
+
+## [Terraria.WorldGen] public static bool InWorld(int x, int y, int fluff = 0)
+在处理与加法或减法相结合的随机坐标时，你可能会构造超出世界边界的坐标。这将崩溃世界生成，所以在尝试在这些坐标上执行操作之前检查坐标是否合适是很重要的。使用此方法检查给定坐标是否在世界内。`fluff`参数进一步检查坐标至少离边缘那么多个瓷砖，这对于可能影响大片瓷砖的世界生成操作很有用。
+
+## [Terraria.WorldGen] public static Point RandomWorldPoint(int top = 0, int right = 0, int bottom = 0, int left = 0)
+一种更精简的方法来找到世界中的随机瓷砖坐标。`Point point = WorldGen.RandomWorldPoint((int)Main.worldSurface, 50, 500, 50)`等价于
+```cs
+int x = WorldGen.genRand.Next(50, Main.maxTilesX - 50);
+int y = WorldGen.genRand.Next((int)Main.worldSurface, Main.maxTilesY - 500);
+```
+
+## [Terraria.WorldGen] public static void KillTile(int i, int j, bool fail = false, bool effectOnly = false, bool noItem = false)
+`KillTile`可用于销毁指定`i`和`j`坐标处的瓷砖或多重瓷砖。`fail`防止瓷砖被销毁，但仍然播放命中声音。`effectOnly`防止瓷砖被销毁，但仍然产生命中尘埃并阻止命中声音。`noItem`防止物品掉落。
+
+## [Terraria.WorldGen] public static bool PlaceTile(int i, int j, int type, bool mute = false, bool forced = false, int plr = -1, int style = 0)
+PlaceTile是在遵循锚点考虑的同时放置单个瓷砖的主要方式。`i`和`j`是坐标。这些坐标与瓷砖的原点相关，不一定是左上角。阅读[基本瓷砖](https://github.com/tModLoader/tModLoader/wiki/Basic-Tile)以熟悉锚点和原点的概念。`mute`表示是否应该发出声音，这只适用于游戏内使用，因为在世界生成期间声音都是静音的。`forced`尝试即使在其他瓷砖已经存在于坐标上也放置瓷砖，但这是不可靠的。`plr`除了影响浴缸外什么都不做。`style`指的是提供的瓷砖类型的样式。样式在基本瓷砖指南中解释。
+
+PlaceTile返回一个指示放置成功的bool。不幸的是，它不起作用，不要使用它。在调用PlaceTile后检查坐标是检查放置是否成功的好方法：`if(Main.tile[x, y].type == TileID.Campfire)`
+
+PlaceTile没有暴露所有内容。例如，尝试放置具有特定样式的瓷砖会被许多底层方法忽略。另一个问题是，不可能放置具有左右放置方向面向右的瓷砖。在这些情况下，你可能需要手动放置多重瓷砖的每个瓷砖，或者改为使用`WorldGen.PlaceObject`。`WorldGen.PlaceObject`需要更多输入。例如，用`PlaceObject`放置Coral意味着你必须手动指定样式，因为随机样式选择是PlaceTile的一个特性。
+
+TODO: 解释如何在代码中放置TileEntity，因为PlaceTile不会自动执行此操作。
+
+## [Terraria.WorldGen] public static bool PlaceSmallPile(int i, int j, int X, int Y, ushort type = 185)
+PlaceTile是一种放置环境瓷砖的特殊方式。`i`和`j`是坐标。`X`和`Y`是[纹理文件](https://i.imgur.com/TjuJhP8.png)中特定瓷砖的计数和行索引。
+索引从左到右计数，从0开始。因此，例如Sapphire Stash会有Y=1（第二行）和X=21（第22个2x1瓷砖）。
+
+## MicroBiome
+
+
+## StructureMap
+在世界生成期间，游戏使用`StructureMap`（通过`GenVars.structures`访问）来跟踪重要的世界生成特征以防止重叠。`StructureMap`基本上是一个矩形集合，指示世界中被世界生成特征占据的区域，这些区域不应被干扰。如果你正在生成重要的东西，你可能想通过`GenVars.structures.AddProtectedStructure`方法添加到StructureMap，以告诉其他世界生成通道避免该区域。StructureMap是协作的，如果你正在放置结构，在放置坐标之前用`GenVars.structures.CanPlace`结构检查是一个好主意。原版在StructureMap中放置的一些结构包括Hive、Enchanted Sword Altars和Cabin。StructureMap不必用于所有结构，因为生物群落相互交互是有趣的。将StructureMap用于不应该交互的结构，并在破坏性操作之前检查StructureMap。
+
+此图像显示StructureMap中的条目以绿色突出显示。
+![](https://i.imgur.com/1vZGkcs.png)
+
+## TileID.Sets.GeneralPlacementTiles
+当代码检查`GenVars.structures.CanPlace`时，CanPlace还会搜索`GeneralPlacementTiles`中为false的瓷砖。在GeneralPlacementTiles中为瓷砖设置false将阻止遵守StructureMap的结构尝试在其上放置。
+
+## TileID.Sets.CanBeClearedDuringGeneration
+此代码影响类似Cavinator和TileRunner的地形方法。在此数组中标记为false的瓷砖将存活这些操作。
+
+# IL编辑
+由于原版世界生成通道都是匿名方法，它们以略有不同的方式进行IL编辑，这在ExampleMod中演示：
+[ExampleWorldGenHookingSystem](https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Common/Systems/ExampleWorldGenHookingSystem.cs)

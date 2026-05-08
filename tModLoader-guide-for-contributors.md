@@ -1,0 +1,118 @@
+___
+- **[我不想为tModLoader做贡献，我想玩模组](tModLoader-guide-for-players)**
+- **[我不想为tModLoader做贡献，我想创建模组](tModLoader-guide-for-developers)**
+___
+
+# 安装
+如果您仍需要安装tModLoader，请参阅[tModLoader玩家指南](tModLoader-guide-for-players)。
+
+### IDE
+您将需要一个IDE（集成开发环境）来帮助开发tModLoader。
+- 对于Windows用户，我们推荐[Visual Studio 2022 Community Edition](https://visualstudio.microsoft.com/vs/community)。
+- 一个流行的跨平台替代方案是Jetbrains的[**Rider**](https://www.jetbrains.com/rider)。Rider对此类非商业项目免费使用。
+
+### Git
+如果您以前从未使用过Git，请查看我们的[有关如何使用它的指南](https://github.com/tModLoader/tModLoader/wiki/Intermediate-Git-&-mod-management)。如果您在阅读本指南时遇到不认识的内容，只需用Google搜索。您应该能够轻松找到与您的问题相关的内容。您也可以查看[这个简短指南](#进一步的在线帮助)。
+此外，如果您本质上害怕命令行，像[GitHub desktop](https://desktop.github.com/)和[VisualStudio的Github扩展](https://marketplace.visualstudio.com/items?itemName=GitHub.GitHubExtensionforVisualStudio)等附加工具可以以用户友好的界面提供您需要的大部分功能。
+
+# 代码补丁程序
+tModLoader使用自己的代码补丁程序工具，如果您想为tModLoader做贡献，则必须使用它。我们必须使用补丁系统，因为我们不能公开上传原版源代码。这也允许相对简单的代码维护。
+
+![](https://i.imgur.com/k2lX3nt.png)
+
+## 首次获取tModLoader代码
+**注意：** 设置GUI（图形用户界面）目前仅适用于Windows，在其他系统上使用CLI（命令行界面）！
+1. [安装 .NET 8.0 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0);
+2. Fork此仓库，然后将fork克隆到您的PC上。您必须使用Git来完成此操作，下载源代码zip文件不起作用；
+3. **GUI：** 在根文件夹中打开`setup.bat`；<br/>**CLI：** 在根文件夹中打开终端；
+4. **GUI：** 点击'Setup'（左上角按钮）；<br/>**CLI：** 运行`./setup-cli setup`；
+    * 如果询问，选择您的原版`Steam Windows 1.4.4.9` `Terraria.exe`。
+    * 如果您想处理1.4.3或1.3版本的tModLoader，您需要`Terraria_1.4.3.6.exe`和`TerrariaServer_1.4.3.6.exe`，或`Terraria_1.3.5.3.exe`和`TerrariaServer_1.3.5.3.exe`。
+5. 反编译完成后，验证您有以下文件夹：
+    * `src/decompiled/`
+    * `src/Terraria/`
+    * `src/TerrariaNetCore/`
+    * `src/tModLoader/`（您将主要通过补丁程序和`tModLoader.sln`文件修改此文件夹中的文件）
+6. 要打开tModLoader工作区，导航到`solutions/`并用您的IDE打开`tModLoader.sln`。
+
+## 推荐的贡献/开发周期
+**开始：**
+1. 拉取`1.4.4`分支。您必须使用Git来完成此操作，下载源代码zip文件不起作用；
+2. 为您正在开发的功能创建一个新的Git分支（即`feature/something_new`或`fix/that_thing`）；
+3. 在开发GUI/CLI中运行**Setup**（`setup`）或**Regenerate Source**（`regen-source`）；
+
+**开发：**
+1. 使用`solutions/tModLoader.sln`和您的IDE开发您的贡献；
+    * 在进行更改时，请遵循既定的[tModLoader样式指南](https://github.com/tModLoader/tModLoader/wiki/tModLoader-Style-Guide)。
+2. `Diff <workspace>`（`diff <workspace>`）您开发的工作区，将您的代码转换为补丁；
+    * **您的工作区99%的时间是`tModLoader`。**如果不是，我们暗示您知道自己在做什么。
+3. 创建新的提交以提交patches/文件夹
+    * 在推送提交之前，请查看我们的[贡献文章](https://github.com/tModLoader/tModLoader/blob/1.4.4/.github/CONTRIBUTING.md)。提前谢谢！
+4. 如果分支被其他人修改了——在Git中拉取补丁并在setup中`Regen Source`（`regen-source`）来将它们应用到您的代码。
+5. 重复。
+
+**打开拉取请求：**
+* 完成后，将您的分支PR到`1.4.4`，而不是`master`、`preview`或`stable`。
+* 如果您需要早期反馈——您可以在完成之前打开拉取请求！如果需要，可以将它们标记为草稿。
+
+## 测试您的代码
+如果您正在测试错误修复，只需调试`Debug`配置即可。
+
+## 向Example Mod添加示例
+当您向tModLoader添加功能时，您会希望向Example Mod添加这些功能的使用示例。
+* Example Mod示例应该简单明了，并最小化不相关的效果。
+* 示例应展示新功能的至少最常见用法，但如果有帮助，也可以添加更高级的示例。
+* 注释应重点关注所添加示例的独特之处。无需注释读者应该已经具备基本理解力的代码，例如`SetDefaults`和`AddRecipes`方法。
+* 示例的名称应该暗示可以从示例中学到什么。
+* 在极少数情况下，单个文件中有多个类是可以接受的，但在大多数情况下，每个类应该在自己的文件中，文件名与类名相同。
+* 精灵图像应该简单。您可以直接重用现有精灵图像（如重写`Texture`），以其他Example Mod精灵图像的风格制作精灵图像，甚至可以在图像编辑器中降低现有Terraria精灵图像的饱和度并使用它。不要让精灵图像成为阻碍拉取请求的事情，有很多贡献者愿意提供帮助。您总是可以为拉取请求制作一个占位符精灵图像，我们可以在审查拉取请求时提供帮助。
+
+在v2025.01之前，需要在ModSources文件夹中创建符号链接才能在"Develop Mods"菜单中显示ExampleMod文件夹。这不再是必需的，如果您已有此链接，可以根据需要将其删除。但是，您需要至少从`tModLoader.sln`构建一次ExampleMod，然后它才会显示在游戏中"Develop Mods"菜单中。为此，点击启动项下拉菜单并选择"ExampleMod"，然后像平常一样调试或构建ExampleMod项目。在制作拉取请求之前，请确保它作为测试的一部分成功构建。
+
+![image](https://github.com/user-attachments/assets/b12ea982-7ac4-4925-a65f-4dafdc4cbd25)
+
+在您要进行贡献之前，请查看[这篇文章](https://github.com/tModLoader/tModLoader/blob/stable/.github/CONTRIBUTING.md)。提前谢谢。
+
+## 保持代码最新
+**注意：** 在拉取最新补丁之前，明智的做法是备份您的编辑（如果有尚未提交的）。应用最新补丁**将**删除其中未包含的任何工作。
+
+**Setup**（如果您是首次更新代码，请执行此操作，它还需要您安装某种命令行[git客户端](https://git-scm.com/downloads)）
+1. 在tML文件夹中打开Git Bash窗口或类似工具
+2. 输入`git remote add upstream https://github.com/tModLoader/tModLoader/`
+3. 为确保正确设置，输入`git remote -v`，你应该看到类似这样的内容：
+```
+origin  https://github.com/*YOURUSERNAME*/tModLoader.git (fetch)
+origin  https://github.com/*YOURUSERNAME*/tModLoader.git (push)
+upstream        https://github.com/tModLoader/tModLoader (fetch)
+upstream        https://github.com/tModLoader/tModLoader (push)
+```
+
+**实际拉取**
+1. 打开另一个shell窗口（如果需要，输入`git remote -v`以确保一切如你所愿）
+2. 输入`git fetch upstream`
+3. 然后`git merge upstream/*branchtomerge*`
+   * 这将从*branchtomerge*将所有最新提交拉入您已检出的分支
+   * 您应该验证现在拥有了位于patches/中的最新补丁
+4. 在根文件夹中打开setup.bat
+5. 点击'Regenerate Source'（右下角）
+   * 此过程后，您可以像平常一样使用更新后的代码打开solutions/tModLoader.sln
+
+### 帮助！我不小心在错误的分支上提交了！
+只需stash更改并checkout。
+___
+1. 在git shell/bash或类似工具中打开
+2. 运行`git stash save`或`git stash`（应该默认为save）
+3. 运行`git checkout -b xxxx`
+    * 将xxxx替换为分支名称
+    * 如果不创建新分支，则省略-b
+4. 运行`git stash pop`
+
+## 获取特定Terraria版本
+TModLoader开发*不再*需要下载特定Terraria版本，但如果您需要它们作为参考，请按以下步骤操作：
+
+- 下载[DepotDownloader](https://github.com/SteamRE/DepotDownloader/releases)实用程序。
+- 前往[此SteamDB页面](https://steamdb.info/app/105600/depots/)，选择并记住您想要的depot（操作系统），导航到Manifests，在过滤器中选择`public`分支，并获取您需要的版本的manifest ID。
+- 运行`./DepotDownloader -app 105600 -depot <depot ID> -manifest <manifest ID> -username <steam login>`下载该版本。
+
+# 进一步的在线帮助
+如果您想联系我们或tModLoader用户，最好加入我们的[Discord服务器](https://discord.gg/tmodloader)。Discord是一个聊天和语音应用程序。

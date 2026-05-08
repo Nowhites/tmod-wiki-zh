@@ -1,0 +1,699 @@
+***
+本指南是为tModLoader 1.4.4版编写的，即将发布的tModLoader版本。在当前的tModLoader版本中，本地化文件不会自动更新，本指南中提到的一些方法也不存在。基本概念仍然适用。
+***
+
+[原始页面（英文） | 原始页面（英文）](https://github.com/tModLoader/tModLoader/wiki/Localization)<br />
+[中文版 | 中文版](https://github.com/tModLoader/tModLoader/wiki/zh%3ALocalization-%E6%9C%AC%E5%9C%B0%E5%8C%96)
+
+---
+
+# 什么是本地化？
+本地化或翻译使mod能够被使用与mod作者所说语言不同的用户使用和享受。用户在玩游戏mod时可能看到的每段文本都包含在称为本地化文件的文本文件中。例如，ExampleMod有一个物品在英文中称为"Paper Airplane"，在俄语中称为"Бумажный самолётик"。通过使用本地化，俄语用户可以在不学习英语的情况下理解和享受ExampleMod的内容。
+
+这些本地化文件易于使用，允许没有技术技能的用户翻译mod。然后可以将这些翻译提供给mod作者或作为新mod发布，让更多人享受该mod。
+
+**即使您不打算亲自将mod本地化为其他语言，您也需要为您支持的某种语言使用本地化文件。**
+
+本wiki页面涵盖面向mod开发者的本地化主题。如果您有兴趣本地化现有mod或为tModLoader本身提供本地化，请阅读[(英文) 贡献本地化wiki页面](https://github.com/tModLoader/tModLoader/wiki/Contributing-Localization)。
+
+# 从1.4.3迁移到1.4.4
+从tModLoader 2023.01版开始，所有本地化现在完全在`.hjson`文件中完成。在代码中声明翻译不再支持。这一更改将大大简化本地化管理，使mod翻译更容易创建。如果您对这些更改的原因感兴趣，请参阅[(英文) 主要本地化更改功能提案](https://github.com/tModLoader/tModLoader/issues/3074)
+
+**如果您不使用Git或某种形式的版本控制，建议在继续之前备份mod源代码文件夹。**
+
+## 在1.4.3中生成本地化文件
+首先，我们需要使用旧版tModLoader导出本地化文件。您需要使用Steam切换到`"无"`分支。（[(英文) 切换tModLoader版本说明](https://github.com/tModLoader/tModLoader/wiki/Basic-tModLoader-Usage-FAQ#switch-to-stable-tmodloader-or-to-preview-tmodloader)）
+
+游戏进入正确版本后，打开tModLoader，启用mod，然后访问`"Mod源"`菜单。在列表中找到您的mod。当悬停时，您会发现一个绿色箭头，上面写着"导出1.4.4+本地化文件"，按下它。
+![image](https://user-images.githubusercontent.com/4522492/210681409-a659670d-5908-4e5d-bd45-74c0545f4666.png)
+现在导航到`"ModSources"`文件夹并导航到mod的本地化文件。如果您之前没有本地化文件，请导航到mod文件夹的顶层。您应该会看到新生成的`.hjson.new`文件：
+![image](https://user-images.githubusercontent.com/4522492/210681629-8aad2234-bd56-40c8-b03f-7e36b98d4486.png)
+在文本编辑器中打开新文件并确认它们看起来正确。当前`.hjson`文件中所有以前的条目以及为mod所有其他内容生成的新条目都应该存在。如果看起来不错，请继续下一步。
+
+### 更改的键
+请注意，许多键模式已更改。这些将在导出时自动调整，但任何自定义键或使用旧键模式的代码都需要mod制作者修复。例如，`Mods.{ModName}.ItemName.{ContentName}`现在是`Mods.{ModName}.Items.{ContentName}.DisplayName`。
+
+<details><summary>更改的键模式</summary>
+
+```
+Mods.{ModName}.DamageClassName.{ContentName}		Mods.{ModName}.DamageClasses.{ContentName}.DisplayName
+Mods.{ModName}.InfoDisplayName.{ContentName}		Mods.{ModName}.InfoDisplays.{ContentName}.DisplayName
+Mods.{ModName}.BiomeName.{ContentName}			Mods.{ModName}.Biomes.{ContentName}.DisplayName
+Mods.{ModName}.BuffName.{ContentName}			Mods.{ModName}.Buffs.{ContentName}.DisplayName
+Mods.{ModName}.BuffDescription.{ContentName}		Mods.{ModName}.Buffs.{ContentName}.Description
+Mods.{ModName}.ItemName.{ContentName}			Mods.{ModName}.Items.{ContentName}.DisplayName
+Mods.{ModName}.ItemTooltip.{ContentName}		Mods.{ModName}.Items.{ContentName}.Tooltip
+Mods.{ModName}.NPCName.{ContentName}			Mods.{ModName}.NPCs.{ContentName}.DisplayName
+Mods.{ModName}.Prefix.{ContentName}			Mods.{ModName}.Prefixes.{ContentName}.DisplayName
+Mods.{ModName}.ProjectileName.{ContentName}		Mods.{ModName}.Projectiles.{ContentName}.DisplayName
+Mods.{ModName}.ResourceDisplaySet.{ContentName}		Mods.{ModName}.ResourceDisplaySets.{ContentName}.DisplayName
+Mods.{ModName}.Containers.{ContentName}			Mods.{ModName}.Tiles.{ContentName}.ContainerName
+Mods.{ModName}.MapObject.{ContentName}			Mods.{ModName}.Tiles.{ContentName}.MapEntry
+Mods.{ModName}.Keybind.{ContentName}			Mods.{ModName}.Keybinds.{ContentName}.DisplayName
+```
+
+</details>
+
+## 切换到1.4.4 tModLoader并构建mod
+使用Steam切换到`1.4.4-preview`分支。（[(英文) 切换tModLoader版本说明](https://github.com/tModLoader/tModLoader/wiki/Basic-tModLoader-Usage-FAQ#switch-to-stable-tmodloader-or-to-preview-tmodloader)）
+
+启动tModLoader后，您会注意到您的mod（以及您启用的大多数其他mod）无法加载，这是预期的。访问"Mod源"菜单并按"运行tModPorter"按钮。除了其他更改外，这还将删除使用旧本地化方法的所有代码。
+![image](https://user-images.githubusercontent.com/4522492/210683375-43816104-2812-4db2-bac6-813ebb47a089.png)
+之后，您需要找到这些`.hjson.new`文件并用它们替换现有的`.hjson`文件。为此，首先删除当前的`.hjson`文件（如果有的话），然后将`.hjson.new`文件重命名为`.hjson`扩展名。（如果您无法重命名文件扩展名，您需要[启用"文件扩展名"](https://github.com/tModLoader/tModLoader/assets/4522492/2f901fe9-db01-4bff-b930-449220419ae7)以便能够执行此操作。）
+
+现在，您可能需要打开Visual Studio并修复任何剩余的编译问题。修复完剩余问题后，您可以重新构建mod，它应该可以工作。事情正常后，您可以搜索mod源代码中类似`// Tooltip.SetDefault("这是一个mod物品。");`或`// DisplayName.SetDefault("示例剑");`的行并删除它们。它们将不再被使用。（您可以在项目中搜索所有文件以搜索搜索词`.SetDefault(`来轻松找到这些行。）
+
+可以使用以下正则表达式来帮助更轻松地查找调用（并将其替换为空字符串）。两者都需要使用Notepad++等工具，并启用".匹配换行"选项
+- 单行注释：`\s+// [\w.]+SetDefault\(".+?;`
+- 多行注释：`\s+/\*[\s\w.]+SetDefault\(".+?\*/`
+
+Notepad++快速指南以应用于整个mod：打开任何文件在Notepad++中，按ctrl + F，单击"在文件中查找"选项卡，在底部选择"正则表达式"和".匹配换行"，然后在"过滤器："中添加`*.cs`，对于"目录："单击右侧的按钮导航到mod的根文件夹。最后，将正则表达式粘贴到"查找内容："中，并将"替换为："保留为空，然后按"在文件中替换"。如果出错，只需按一次ctrl + Z即可撤消所有更改。建议使用git等版本控制软件，以便在需要时能够手动还原并查看结果。
+
+# 本地化工作流程
+本地化文件在mod加载结束时更新。这意味着mod制作者需要在添加内容后构建和加载mod，以便本地化文件更新。更新后，mod制作者可以编辑`.hjson`文件以添加翻译。完成后，可以再次构建和重新加载mod，以便翻译出现在游戏中。
+
+为避免丢失工作，请注意预期的工作流程：
+
+1. 向mod添加新内容，例如新的`ModItem`
+2. 构建并重新加载mod
+3. 此时，`.hjson`文件将自动更新，包含新内容的条目。编辑`.hjson`文件以为新内容提供英文名称
+4. 构建并重新加载mod
+5. 非英文的`.hjson`文件现在会使用适当的占位符更新，也可以由翻译者或mod制作者更新
+
+如果翻译者向您发送更新的`.hjson`文件以直接添加到您的mod中，请注意，如果mod加载且tModLoader出于某种原因检测到`.tmod`文件比`.hjson`文件新，则可能会被覆盖。在这种情况下，最好的选择是在加载或重新加载mod之前构建mod。您可以在tModLoader关闭时在Visual Studio中构建，或者可以在启动tModLoader时按住shift键跳过加载mod，然后立即访问"Mod源"菜单来构建mod。如果您忘记了这样做并发现tModLoader将新翻译的`.hjson`文件还原为其旧内容，请再次将更新的`.hjson`文件复制到mod源文件夹，然后构建并重新加载。
+
+## 实时更新
+tModLoader会检测到`ModSources`文件夹中的`.hjson`文件何时保存，并会在游戏中自动重新加载它们。通过使用这种方法，mod制作者不需要重新构建和重新加载mod来测试新值。如果您使用此功能，请在发布前记住重新构建mod，以便所有更改都进入发布的mod。
+
+这里我们可以看到该功能的实际效果。mod制作者编辑`en-US.hjson`文件，然后保存以更改`ExampleWings`物品的英文显示名称和工具提示。更改会在几秒钟后出现在游戏中：
+
+https://user-images.githubusercontent.com/4522492/229942438-26604fd7-9073-436c-b2ab-d99b4f2efeb7.mp4
+
+# 本地化工作原理
+游戏中的每段文本（从物品名称到主菜单上的文字）都使用本地化。游戏中的每段文本实际上是一对数据：一个本地化键和一个本地化值。例如，当玩家创建一个小世界时，游戏使用本地化键`UI.WorldSizeSmall`来查找当前加载语言的正确翻译值，如果选择了英语，则向用户显示"Small"一词。如果选择了另一种语言，游戏仍然查找`UI.WorldSizeSmall`，但本地化值会不同。由于Terraria的创建者用英语编写代码，因此大多数本地化键与其英语翻译值非常相似。
+
+在tModLoader中，mod使用`.hjson`文件来清晰地包含本地化键和本地化值。每种语言都有自己的`.hjson`文件。如果您熟悉JSON，这些`.hjson`文件会很熟悉。
+
+这是一个简单的例子：
+
+文件名：**tModLoader/ModSources/ExampleMod/en-US.hjson**
+```
+Mods: {
+	ExampleMod: {
+		Items: {
+			ExampleItem: {
+				DisplayName: Example Item
+				Tooltip: This is a modded Item.
+			}
+		}
+	}
+}
+```
+
+在这个例子中，我们可以看到两个主要概念：本地化键和本地化翻译。本地化键由每层嵌套中`:`左侧的所有文本组合派生。`:`右侧的文本是本地化值。本示例传达2个本地化键及其对应的本地化值：`Mods.ExampleMod.Items.ExampleItem.Displayname`对应`Example Item`，`Mods.ExampleMod.Items.ExampleItem.Tooltip`对应`This is a modded Item.`。如果语法看起来很复杂，请不要担心，mod制作者不需要手动编辑这些文件，游戏会自动更新它们。
+
+加载此mod时，tModLoader会找到与当前语言对应的所有本地化文件并将它们存储在内存中。当游戏需要向用户显示文本时，使用键查询存储的数据并检索正确的文本。翻译作为`LocalizedText`对象存储在内存中，mod制作者可以使用`Language.GetText`方法从本地化键检索`LocalizedText`对象。可以使用`Value`属性从`LocalizedText`对象获取本地化值。或者，`Language.GetTextValue`方法直接从本地化键返回本地化值：
+
+```cs
+string hivePackDialogue = Language.GetTextValue("Mods.ExampleMod.Dialogue.ExampleTravelingMerchant.HiveBackpackDialogue");
+或者
+string hivePackDialogue = Language.GetText("Mods.ExampleMod.Dialogue.ExampleTravelingMerchant.HiveBackpackDialogue").Value;
+或者
+LocalizedText hivePackDialogueLocalizedText = Language.GetText("Mods.ExampleMod.Dialogue.ExampleTravelingMerchant.HiveBackpackDialogue");
+string hivePackDialogue = hivePackDialogueLocalizedText.Value;
+```
+
+## 本地化键
+tModLoader会自动为大多数内容分配翻译键。键模式是`Mods.{ModName}.{Category}.{ContentName}.{DataName}`，其中`ModName`是mod的内部名称，`Category`由内容类型提供，`ContentName`是内容的内部名称（通常是类名），`DataName`指定类中的键。
+
+例如，`ModItem`将`Category`设置为`Items`。它还有2个独立的数据，即`DisplayName`和`Tooltip`。如果名为`ExampleMod`的mod添加了一个名为`ExampleItem`的`ModItem`类，则会生成2个键并将其添加到`.hjson`文件中：`Mods.ExampleMod.Items.ExampleItem.DisplayName`和`Mods.ExampleMod.Items.ExampleItem.Tooltip`。
+
+**注意：**避免在本地化键中使用空格和其他特殊字符。
+
+## 替换
+如果您的本地化文件中经常重复某些文本，或者如果您希望在游戏中使用现有文本，您可以使用替换来保持本地化文件的整洁和有序。替换采用`{$KeyHere}`的形式在本地化值中。当游戏加载时，这些部分将被替换为与提供的键对应的本地化文本。
+
+例如，游戏已经有关于文本"右键点击打开"的翻译，存储在`CommonItemTooltip.RightClickToOpen`键中。mod可以使用替换来重用该值。条目`Tooltip: "{$CommonItemTooltip.RightClickToOpen}"`最终会在用户的语言中获得"右键点击打开"文本。其他现有翻译（如物品名称和其他常见工具提示）也可供使用。
+
+也可以使用mod内部的翻译。例如，在[(英文) ExampleMod的本地化文件](https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Localization/en-US.hjson)中，`MapObject.ExamplePylonTile: "{$Mods.ExampleMod.ItemName.ExamplePylonItem}"`用于重用`Mods.ExampleMod.ItemName.ExamplePylonItem`键中包含的翻译。
+
+许多替换在它们里面有`{0}`或`{1}`，这些是mod制作者可以提供的值的占位符。此功能在[字符串格式化部分](#字符串格式化)中解释。
+
+### 现有物品工具提示
+在mod物品中使用游戏提供的现有物品工具提示是个好主意。使用一致的语言和现有翻译会使您的mod对更多人更具吸引力。展开下面的部分以查看现有常见工具提示的列表。请记住，所有这些的键都将以`CommonItemTooltip.`开头。
+
+<details><summary>CommonItemTooltip键</summary>
+
+```
+// 由Terraria添加
+"UsesLife": "使用{0}点生命",
+"UsesMana": "使用{0}点魔法",
+"RestoresLife": "恢复{0}点生命",
+"RestoresLifeRange": "恢复{0}至{1}点生命",
+"RestoresMana": "恢复{0}点魔法",
+"MinuteDuration": "持续{0}分钟",
+"SecondDuration": "持续{0}秒",
+"PlaceableOnXmasTree": "可放置在圣诞树上",
+"String": "增加溜溜球范围",
+"Counterweight": "在溜溜球击中敌人后投出配重",
+"BannerBonus": "附近玩家获得对抗以下敌人的奖励：",
+"BannerBonusReduced": "附近玩家获得对抗以下敌人的小奖励：",
+"SpecialCrafting": "用于特殊制作",
+"DevItem": "'非常适合冒充开发者！'",
+"FlightAndSlowfall": "允许飞行和缓慢下落",
+"PressDownToHover": "按下向下切换悬停\n按下向上关闭悬停",
+"PressUpToBooster": "按住向上加速！",
+"RightClickToOpen": "<right>打开",
+"RightClickToClose": "<right>关闭",
+"MinorStats": "所有属性小幅提升",
+"MediumStats": "所有属性中等提升",
+"MajorStats": "所有属性大幅提升",
+"TipsyStats": "近战属性小幅提升，防御力降低",
+"EtherianManaCost10": "在守护Eternia水晶时每次使用消耗10点Etherian魔法",
+"GolfBall": "可以用高尔夫球杆击中",
+"Sentry": "召唤哨兵",
+"GolfIron": "全能型球杆，最适合中距离\n高尔夫球会有不错的距离和体面的垂直起球",
+"GolfPutter": " Specialized club for finishing holes\n高尔夫球会紧贴地面近距离飞行以进行精确击球",
+"GolfWedge": " Specialized club for sand traps or tall obstacles\n高尔夫球会获得大量垂直起球但飞行距离不远",
+"GolfDriver": " Powerful club for long distances\n高尔夫球会飞行很远，只有很小的垂直起球",
+"Kite": " kite可以在有风的日子放飞\n用<right>收线",
+"LavaFishing": "允许在熔岩中钓鱼",
+"CreativeSacrificeNeeded": "再研究{0}个以解锁复制",
+"CreativeSacrificeComplete": "复制已解锁",
+"TeleportationPylon": "当2个村民在附近时传送到另一个水晶塔\n每种类型只能放置一个，且在匹配的生物群系中",
+"Whips": "您的召唤物将集中攻击被击中的敌人",
+"WizardHatDuringAnniversary": "将最大召唤物数量增加1",
+"MechSummonDuringEverything": "'套装的一部分'",
+"MechdusaSummonNotDuringEverything": "'在这个世界上没有效果'",
+"LuminiteVariant": "'来自冥界的禁，建筑材料'"
+
+// 由tModLoader添加
+"IncreasesMaxLifeBy": "最大生命增加{0}点",
+"IncreasesMaxManaBy": "最大魔法增加{0}点",
+"IncreasesMaxLifeByPercent": "最大生命增加{0}%",
+"IncreasesMaxManaByPercent": "最大魔法增加{0}%",
+
+"IncreasesBowDamageByPercent": "弓伤害增加{0}%",
+"IncreasesGunDamageByPercent": "枪伤害增加{0}%",
+"IncreasesSpecialistDamageByPercent": "专家远程伤害增加{0}%",
+
+"IncreasesWhipRangeByPercent": "鞭子范围增加{0}%",
+"IncreasesMaxMinionsBy": "最大召唤物数量增加{0}",
+"IncreasesMaxSentriesBy": "最大哨兵数量增加{0}",
+
+"IncreasesFishingPowerBy": "钓鱼能力增加{0}",
+
+"PermanentlyIncreasesMaxLifeBy": "永久增加最大生命{0}点",
+"PermanentlyIncreasesMaxManaBy": "永久增加最大魔法{0}点",
+
+"ReducesDamageTakenByPercent": "受到伤害减少{0}%",
+
+"PercentChanceToSaveAmmo": "{0}%几率保存弹药",
+"PercentReducedManaCost": "魔法消耗减少{0}%",
+
+"PercentIncreasedMiningSpeed": "采矿速度增加{0}%",
+"PercentIncreasedMovementSpeed": "移动速度增加{0}%",
+
+"ArmorPenetration": "{0}点护甲穿透",
+"PercentIncreasedDamage": "伤害增加{0}%",
+"PercentIncreasedCritChance": "暴击率增加{0}%",
+"PercentIncreasedDamageCritChance": "伤害和暴击率增加{0}%",
+
+"PercentIncreasedMagicDamage": "魔法伤害增加{0}%",
+"PercentIncreasedMagicCritChance": "魔法暴击率增加{0}%",
+"PercentIncreasedMagicDamageCritChance": "魔法伤害和暴击率增加{0}%",
+
+"PercentIncreasedMeleeDamage": "近战伤害增加{0}%",
+"PercentIncreasedMeleeCritChance": "近战暴击率增加{0}%",
+"PercentIncreasedMeleeDamageCritChance": "近战伤害和暴击率增加{0}%",
+"PercentIncreasedMeleeSpeed": "近战速度增加{0}%",
+
+"PercentIncreasedRangedDamage": "远程伤害增加{0}%",
+"PercentIncreasedRangedCritChance": "远程暴击率增加{0}%",
+"PercentIncreasedRangedDamageCritChance": "远程伤害和暴击率增加{0}%",
+
+"PercentIncreasedSummonDamage": "召唤伤害增加{0}%",
+"SummonTagDamage": "{0}点召唤标签伤害",
+"PercentSummonTagCritChance": "召唤标签暴击率增加{0}%"
+```
+
+</details>
+
+### 其他现有翻译
+
+除了打算用于物品工具提示的`CommonItemTooltip.`翻译键外，mod制作者还可以引用游戏中任何其他翻译键。例如，`NPCName.BlueSlime`是获取蓝史莱姆本地化名称的键。mod制作者可以通过下载[(英文) Terraria Workshop指南的高级语言包部分](https://forums.terraria.org/index.php?threads/the-ultimate-guide-to-content-creation-and-use-for-the-terraria-workshop.100652/#advancedlanguagepack)中提到的`.CSV`文件来查看所有本地化键。
+
+请注意，mod翻译键与Terraria内容的键模式不同。例如，ExampleMod的`PartyZombie`的翻译键是`Mods.ExampleMod.NPCs.PartyZombie.DisplayName`。mod内容的翻译键不一定会遵循默认模式，因此代码不应该基于该假设编写。
+
+### 范围简化
+
+如果替换键与使用它的本地化键的值共享一个范围，则可以简化替换键。例如，在[(英文) ExampleMod的本地化文件](https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Localization/en-US.hjson)中，`Mods.ExampleMod.Items.ExamplePetItem.DisplayName`键的值被设置为`"{$Common.PaperAirplane}"`。在这种情况下，游戏知道检查当前范围内的键，从而找到并替换`Mods.ExampleMod.Common.PaperAirplane`键的值。使用这种技术，可以从替换键中省略`Mods.ModName`。替换键匹配的越多，可以省略的文本就越多。
+
+### 覆盖内容本地化键
+如果mod中的许多物品共享一个通用翻译，您可以让它们都指向同一个翻译键。为此，请重写属性并使用您希望使用的翻译键返回`Language.GetText`的结果：
+```cs
+public override LocalizedText Tooltip => Language.GetOrRegister("Mods.ExampleMod.Common.SomeSharedTooltip");
+```
+如果您使用继承，则只需在基类中执行此操作，如果特定子类需要不同的本地化，甚至可以在子类中再次重写它。有关向内容添加超出tModLoader提供的默认属性的额外本地化的信息，请参阅[添加可本地化属性](#添加可本地化属性)。
+
+mod制作者可以使用`public override LocalizedText Tooltip => LocalizedText.Empty;`来指示不应生成翻译键。使用此方法可以使本地化文件更整洁。
+
+## 字符串格式化
+mod制作者可以使用[字符串格式化](https://learn.microsoft.com/en-us/dotnet/api/system.string.format?view=net-7.0#insert-a-string)在翻译中留下在使用的占位符。这是C#的正常功能。mod制作者可以使用`string.Format`方法或`Language.GetTextValue`重载来使用字符串格式化。[占位符部分](#占位符)有更多信息。
+
+### 占位符与翻译绑定
+许多翻译条目有类似`缺少mod: {0}，由{1}需要`的占位符。`{0}`和`{1}`是占位符，文本将在游戏逻辑填入。例如，翻译键`CommonItemTooltips.IncreasesMaxMinionsBy`的值是`增加最大召唤物数量{0}`。为了在配饰物品中使用这个，我们需要提供一个数字来代替`{0}`。
+
+首先，在`.hjson`文件中，我们为物品分配工具提示：
+```
+ExampleMinionBoostAccessory: {
+	DisplayName: Minion Booster
+	Tooltip: "{$CommonItemTooltip.IncreasesMaxMinionsBy}"
+}
+```
+
+接下来，我们需要将我们打算的值"绑定"到这个工具提示。这个配饰旨在将最大召唤物增加3。为此，我们重写`Tooltip`属性并调用原始工具提示上的`WithFormatArgs`方法。这将用提供的值填充占位符。我们建议在类中使用`static readonly int`字段来存储这些统计信息。在下面的示例中，`MaxMinionIncrease`在2个不同的地方使用。使用字段允许mod制作者同时更改行为和工具提示。字段为`readonly`可以防止在运行时尝试修改值，这与`WithFormatArgs`不起作用。这种方法可以防止可能导致工具提示和行为不同步的拼写错误。
+
+```cs
+public class ExampleMinionBoostAccessory : ModItem
+{
+	public static readonly int MaxMinionIncrease = 3;
+
+	public override LocalizedText Tooltip => base.Tooltip.WithFormatArgs(MaxMinionIncrease);
+
+	public override void UpdateEquip(Player player) {
+		player.maxMinions += MaxMinionIncrease; // 增加玩家可以拥有的召唤物数量三个
+	}
+	
+	// 其他代码...
+}
+```
+
+### 多个可格式化替换
+当本地化引用多个替换时，可能会出现重复占位符的问题。例如，使用`CommonItemTooltip.IncreasesMaxManaBy`和`CommonItemTooltip.IncreasesMaxMinionsBy`的配饰会发现它们都使用`{0}`占位符。尝试将值绑定到同时使用这两个文本替换的工具提示将无法工作，需要额外操作。mod制作者可以使用特殊语法来偏移特定替换键内的索引。在替换键后添加`@`后跟一个数字将把该键中的占位符增加指定的数字。简而言之，语法是`{$KeyHere@OffsetNumberHere}`。[ExampleBreastplate.cs](https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Content/Items/Armor/ExampleBreastplate.cs)作为此功能的一个很好的例子：
+
+**现有CommonItemTooltip条目来自[tModLoader.json](https://github.com/tModLoader/tModLoader/blob/stable/patches/tModLoader/Terraria/Localization/Content/en-US/tModLoader.json)**
+```
+"CommonItemTooltip": {
+	"IncreasesMaxManaBy": "增加最大魔法{0}",
+	"IncreasesMaxMinionsBy": "增加最大召唤物数量{0}",
+	// 等等
+```
+
+**ExampleMod/Localization/en-US.hjson**
+```
+ExampleBreastplate: {
+	DisplayName: Example Breastplate
+	Tooltip:
+		'''
+		这是一个mod身体装甲。
+		免疫'着火！'
+		{$CommonItemTooltip.IncreasesMaxManaBy}
+		{$CommonItemTooltip.IncreasesMaxMinionsBy@1}
+		'''
+}
+```
+
+**ExampleMod/Content/Items/Armor/ExampleBreastplate.cs**
+```cs
+public class ExampleBreastplate : ModItem
+{
+	public static readonly int MaxManaIncrease = 20;
+	public static readonly int MaxMinionIncrease = 1;
+
+	public override LocalizedText Tooltip => base.Tooltip.WithFormatArgs(MaxManaIncrease, MaxMinionIncrease);
+
+	public override void UpdateEquip(Player player) {
+		player.buffImmune[BuffID.OnFire] = true; // 使玩家免疫着火
+		player.statManaMax2 += MaxManaIncrease; // 将玩家可以拥有的魔法点数增加20
+		player.maxMinions += MaxMinionIncrease; // 将玩家可以拥有的召唤物数量增加一个
+	}
+}
+```
+从这个例子中，我们可以看到`Tooltip.WithFormatArgs(MaxManaIncrease, MaxMinionIncrease)`试图将`MaxManaIncrease`绑定到`{0}`，将`MaxMinionIncrease`绑定到`{1}`。由于在本地化条目中的`{$CommonItemTooltip.IncreasesMaxMinionsBy@1}`添加了`@1`，原始占位符`{0}`被解释为`{1}`，从而使游戏能够将`MaxMinionIncrease`的值绑定到结果工具提示文本中的正确位置。
+
+这可能看起来有点复杂，简单地忽略文本替换和`WithFormatArgs`直接在本地化文件中键入工具提示文本可能会更简单，但如果正确使用，这种方法的好处可能是显著的。使用这种方法，您的mod大部分将自动本地化为其他语言。这种方法还可以显著降低拼写错误导致以后混淆的可能性。
+
+有关此功能的更复杂示例，请参阅[ExampleStatBonusAccessory.cs](https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Content/Items/Accessories/ExampleStatBonusAccessory.cs)及其相应的[en-US.hjson](https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Localization/en-US.hjson#L164)条目。
+
+### 为动态内容组合翻译
+在极少数情况下，您可能需要一个翻译，其中引用另一个mod的内容名称，但由于组合是在运行时生成的，因此无法创建特定翻译。
+
+**建议：**
+> 避免仅仅因为英语总是遵循某种模式而创建组合翻译的诱惑，因为并非所有语言都可能存在合适的模式。相反，尽量制作尽可能多的独特和详细的翻译。例如，您可能很想制作`Mini-{0}`并替换伤害类名称（`Sentry`）等。这在英语中可以工作，但其他语言可能需要根据替换更改短语结构或添加额外的语法。例如，`Mini-Sentry`可以翻译为"小型哨兵"，但"哨兵"这个词可能需要大写。
+
+一个典型的例子是一个自动为游戏中每个弹药物品添加无限弹药的mod。`WithFormatArgs`可以接受其他`LocalizedText`作为参数。您还可以重写`LocalizedText`属性以返回完全不同的`LocalizedText`（参见下面的示例中的`Tooltip`）
+```
+InfiniteAmmoItem.DisplayName: "无限 {0}"
+```
+
+```cs
+public class InfiniteAmmoItem : ModItem
+{
+    Item baseAmmoItem;
+    
+    public override LocalizedText DisplayName => base.DisplayName.WithFormatArgs(baseAmmoItem.DisplayName);
+
+    public override LocalizedText Tooltip => baseAmmoItem.Tooltip;
+}
+```
+
+### ModConfig用法
+`ModConfig`元素的`Label`和`Tooltip`可以利用文本替换。通过`LabelArgs`和`TooltipArgs`属性，可以为相应的翻译提供值。请注意，以"$"开头的字符串被解释为翻译键。[ModConfigShowcaseLabels.cs](https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Common/Configs/ModConfigShowcases/ModConfigShowcaseLabels.cs)中的`InterpolatedTextA`、`InterpolatedTextB`和`InterpolatedTextC`示例展示了这个功能。
+
+## 复数
+当使用数字占位符时，例如`{0} minutes ago`，在英语中当数字恰好为1时会出现问题。当数字为1时，文本应该说"1 minute ago"而不是"1 minutes ago"。这个问题可以通过复数来解决。作为占位符的扩展，tModLoader还支持语言规则定义的基本复数。在英语中，名词有两种形式，一种用于该名词的单数计数，另一种用于该名词的多个计数。例如，"1 dog"和"3 dogs"。其他语言有不同的规则。为了支持这一点，使用特殊语法来提供翻译正确复数的能力。在这个例子中，`{0} {^0:mod;mods} filtered by enabled filter.`中，`{0}`是将被填充数字的占位符，而`{^0:mod;mods}`告诉游戏检查第0个占位符的值，并使用其值在`mod`和`mods`之间选择。
+
+英语、德语、意大利语、西班牙语和葡萄牙语在值为1时使用第一种形式，在其他值时使用第二种形式。法语在值为0或1时使用第一种形式，在其他值时使用第二种形式。中文无论数量如何只有一种形式。波兰语和俄语的复数规则更复杂，可以在[Unicode语言复数规则网页](https://www.unicode.org/cldr/charts/43/supplemental/language_plural_rules.html)上找到。这些图表中的基本形式顺序对应于tModLoader将使用的顺序。
+
+## 聊天标签
+可以使用[(英文) 聊天标签](https://terraria.wiki.gg/wiki/Chat#Tags)向本地化值添加颜色和物品图标。在[(英文) ExampleMod的本地化文件](https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Localization/en-US.hjson)中找到`ExampleTooltipsItem`作为示例。
+
+# 自动本地化文件
+tModLoader会在出现新内容或翻译键时自动更新`.hjson`文件。英语文件将用作其他语言的模板，这些语言将自动继承注释和布局。
+
+请注意，本地化文件只会在游戏认为合适的情况下更新，以提高效率。例如，mod必须存在于`ModSources`文件夹中。加载的mod也必须是本地构建的mod。本地化文件只会在文件修改时间戳比mod或mod引用的任何mod更旧时更新。请注意，直接测试旧的`.tmod`文件可能会用旧内容覆盖您的`.hjson`文件，因此建议使用Git或备份mod源代码，以便能够恢复文件。
+
+## 添加内容
+当mod制作者向mod添加新内容（如`ModItem`）时，该内容最初不会被本地化。mod制作者应构建并重新加载mod。加载mod后，`.hsjon`文件将自动更新。英语文件现在将包含新内容的默认翻译条目。非英语文件将包含相同的条目，但被注释掉了。要本地化内容，mod制作者需要用所需的文本编辑.hjson文件，保存，然后再次构建和重新加载mod。`.hjson`文件应使用UTF-8编码保存，如果文本编辑器询问的话。
+
+## HJSON语法
+`.hjson`文件包含Hjson数据。Hjson类似于JSON，但旨在供人类阅读。请参阅[Hjson网站](https://hjson.github.io/)了解Hjson语法的详细信息，但大多数mod制作者可以只遵循示例来了解语法。
+
+### 多行
+如果一行文本需要多行，请使用以下语法。确保缩进一致：
+```
+SomeKey: 
+	'''
+	此翻译键有2行。
+	这是第二行！
+	'''
+```
+您也可以使用`\n`作为替代，但为可读性起见，不建议这样做。引号是必需的，以便将`\n`解释为换行符。请注意，tModLoader在更新`.hjson`文件时会自动将其转换为上述语法：
+```
+SomeKey: "此翻译键有5行且可读性低。\n这是第二行！\n这是第三行！\n这是第四行！\n这是第五行！"
+```
+
+### 特殊字符
+如果翻译值需要以`{}[]`,:`或空格开头，则需要为翻译加引号。在其他情况下可以省略引号。如果您的值需要字面的`"`，可以使用多行语法：
+```
+ExamplePetBuff: {
+	DisplayName: "{$Mods.ExampleMod.Common.PaperAirplane}"
+	Description: '''"让这个宠物成为你的榜样！"'''
+}
+```
+
+### tModLoader HJSON功能
+
+#### 颜色
+
+`[c/颜色:文本]`可以显示彩色文本。
+`颜色`是十六进制颜色代码。
+
+例如：
+```
+Yes: "[c/008000:yes]"
+No: "[c/FF0000:no]"
+```
+显示时，"yes"将为绿色，"no"将为红色。
+
+#### 物品
+
+`[i:物品ID]`和`[i:物品类名]`可以在消息中显示物品。
+`物品ID`是物品的`类型`。由于mod物品没有固定的`类型`，您可以改用`[i:ModName/ItemName]`。
+`ModName`是您的mod类名，`ItemName`是物品的类名。
+
+`[i/p前缀ID:物品ID]`可以显示带有前缀的物品。
+`前缀ID`是前缀的`类型`。
+
+`[i/s堆叠:物品ID]`可以显示具有一定堆叠数量的物品。
+`堆叠`是堆叠中的物品数量。
+
+例如：
+```
+Label: "[i:ImproveGame/StarburstWand] tIMBALoader"
+Tooltip: "[i/p57:HiveBackpack] 是一个古怪的配饰，而 [i/s1145:2] 只是 dirt"
+```
+在这个例子中，`Label`将显示`(星爆法杖图标) tIMBALoader`，`StarburstWander`是来自Quality of Life的mod物品。
+`Tooltip`将显示`残忍蜂背包`和`泥土块`堆叠在1145。
+
+#### 键绑定
+
+`<键绑定名称>`可以显示键绑定的本地化名称。目前只支持`<left>`左键和`<right>`右键。
+`KeybindName`是键绑定的名称。
+
+例如：
+```
+Tip: "<right>使用其特殊攻击"
+```
+`<right>`将显示为"右键"的本地化名称。
+
+## 注释
+`.hjson`文件可以包含各种注释样式。tModLoader使用Hjson注释来传达两个独立的概念。
+
+使用`#`在行首的注释是真正的注释，mod作者可以用它来提醒自己有用的事情。这些注释应直接放在它们所属的键之上。如果不将注释放在元素之上，当tModLoader自动更新本地化文件时，注释将丢失或放错位置。
+
+例如：
+```
+ExampleCanStackItem: {
+	DisplayName: Example CanStack Item: Gift Bag
+	# 引用一个语言键，在游戏语言中显示"右键打开"
+	Tooltip: "{$CommonItemTooltip.RightClickToOpen}"
+}
+```
+
+这些注释将从英语文件复制到非英语文件，在那里它们可以提醒翻译者自定义翻译键的使用位置，例如。
+
+使用`/* */`或`//`样式的注释由tModLoader用来指示非英语翻译键尚未翻译。这是mod制作者了解缺少哪些语言翻译的指示器。翻译者可以将翻译值翻译成他们的语言并删除注释语法。mod制作者不应将此注释语法用于正常注释，因为当游戏自动更新`.hjson`文件时它们会丢失。
+
+## 翻译文件名
+tModLoader会尝试将mod中的所有`.hsjon`文件作为本地化文件加载。因此，本地化文件可以放置在任何文件夹路径中，但按照惯例，我们建议将它们放置在mod源文件夹根目录中名为"Localization"的文件夹中。mod生成器遵循此约定，会在您的mod中生成`Localization/en-US.hjson`以开始使用。
+
+有效的语言代码必须存在于文件名开头或包含文件夹的名称中，以确定语言。
+
+### 语言
+
+支持以下语言（也称为文化）：英语（"en-US"）、德语（"de-DE"）、意大利语（"it-IT"）、法语（"fr-FR"）、西班牙语（"es-ES"）、俄语（"ru-RU"）、中文（"zh-Hans"）、葡萄牙语（"pt-BR"）或波兰语（"pl-PL"）。这些代码用于指示`.hjson`文件涉及哪种语言。要开始支持新语言，请参阅[添加新语言](#添加新语言)。
+
+### 前缀
+`.hjson`文件的前缀表示该文件中所有本地化条目共享一个公共前缀。最常见的用法是从本地化文件中省略`Mods`和`ModNameHere`条目。通过省略这些，文件的缩进更少，对一些人来说更容易使用。绝大多数mod不会在其mod前缀之外使用本地化值。
+
+例如，名为`Localization/en-US_Mods.ExampleMod.hjson`的文件将继承`Mods.ExampleMod`前缀，这意味着文件可以直接从`Items`的条目开始。
+
+其模式如下：文件路径按文件夹分割，然后按下划线分割。找到文化后，下一个结果将用作前缀。以下都是指示文件适用于英语并应使用`Mods.ExampleMod`前缀的选项示例。
+
+```
+Localization/en-US_Mods.ExampleMod.hjson
+Localization/en-US/Mods.ExampleMod.hjson
+en-US_Mods.ExampleMod.hjson
+en-US/Mods.ExampleMod.hjson
+Localization/CoolBoss/en-US_Mods.ExampleMod.hjson
+```
+
+### 非本地化.hjson文件
+文件名中没有文化的`.hjson`文件不会被解释为本地化文件。mod制作者可以像使用任何其他"数据"文件一样使用这些文件，其目的可能是什么。具有文化但与英语模板文件名不匹配的`.hjson`文件将被重命名为`{文件名}.legacy`，其本地化条目将不被加载。遇到此重命名的mod制作者应确保更新英语模板文件或将那些本地化条目迁移到其他现有本地化文件。这是设计使然，以保持所有本地化文件布局和文件名的一致性。
+
+## 多个文件
+mod制作者可以使用多个`.hjson`文件来组织翻译。例如，如果mod包含`en-US_Mods.ExampleMod.Items.hjson`和`en-US_Mods.ExampleMod.hjson`，则`en-US_Mods.ExampleMod.Items.hjson`文件可以包含所有物品本地化，而另一个文件包含其余的本地化条目。新内容将自动进入与翻译键最相似的现有条目最多的现有`.hjson`文件。
+
+如果您拆分本地化文件，只需编辑英语文件，然后构建并重新加载mod。其他语言将自动调整自己以匹配相同的布局。
+
+# 添加新的翻译键
+新内容的条目将自动填充`.hjson`文件，但也可以向文件添加自定义翻译键。
+
+**注意：**避免在自定义本地化键中使用空格和其他特殊字符。
+
+## 手动添加键
+对于大多数自定义键来说，手动添加键不是推荐的方法，很容易出错，也不会充分利用本地化系统的强大功能。对于添加新键到mod的典型方法，请参阅[添加可本地化属性](https://github.com/tModLoader/tModLoader/wiki/Localization#添加可本地化属性)。但是，在某些情况下，手动添加的键可能很有用。
+
+要添加自定义键，mod制作者可以遵循`.hjson`语法直接添加本地化条目。例如，ExampleMod有一个名为"Common"的类别，这些条目都是手动添加的，因为tModLoader类不直接使用它们。
+
+例如，我们从以下`.hjson`文件开始：
+```
+Mods: {
+	ExampleMod: {
+    		Common: {
+			PaperAirplane: Paper Airplane
+		}
+        
+		Currencies.ExampleCustomCurrency: example currency
+   	 }
+}
+```
+
+我们可以通过添加一行并遵循`PaperAirplane`示例为`Mods.ExampleMod.Common.NewKey`键添加新条目。我们可以通过遵循`Common`类别中显示的语法添加一个名为`Uncommon`的新类别。我们还可以遵循`Currencies.ExampleCustomCurrency`示例添加一个只占用一行的条目，而不是单独指定类别。以下显示这些方法：
+
+```
+Mods: {
+	ExampleMod: {
+    		Common: {
+			PaperAirplane: Paper Airplane
+        		HotDog: Hot dog
+		}
+        
+ 		Uncommon: {
+            		Helicopter: Example Helicopter
+       		}
+        
+		Currencies.ExampleCustomCurrency: example currency
+        	Currencies.DirtCurrency: piles of dirt
+    	}
+}
+```
+
+请注意，当本地化文件自动更新时，tModLoader将决定如何组织和格式化文件，这将导致条目移动，但不会丢失数据。
+
+
+## 添加可本地化属性
+mod制作者可以向其类添加`LocalizedText`属性，用于各种目的。如果正确实现，这些属性将自动填充`.hjson`文件并准备好进行本地化工作。
+
+[ExampleHealingPotion.cs](https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Content/Items/Consumables/ExampleHealingPotion.cs)展示了一个这样的用例。`ExampleHealingPotion`使用名为`RestoreLifeText`的`LocalizedText`属性，该属性在动态工具提示中使用。
+
+基本方法如下：
+1. 向类添加静态`LocalizedText`属性
+2. 使用`this.GetLocalization`方法在`SetStaticDefaults`中分配该属性
+3. 通过访问属性在需要时获取本地化文本值
+
+例如：
+```cs
+public class ExampleHealingPotion : ModItem
+{
+	// 步骤1：创建静态LocalizedText属性
+	public static LocalizedText RestoreLifeText { get; private set; }
+
+	public override void SetStaticDefaults() {
+		// 步骤2：将RestoreLifeText分配给GetLocalization的结果
+		RestoreLifeText = this.GetLocalization(nameof(RestoreLifeText));
+	}
+
+	public override void ModifyTooltips(List<TooltipLine> tooltips) {
+		TooltipLine line = tooltips.FirstOrDefault(x => x.Mod == "Terraria" && x.Name == "HealLife");
+
+		if (line != null) {
+			// 将文本更改为"恢复最大/2（快速治疗时最大/4）生命"
+			// 步骤3：获取本地化文本。本例使用Format方法，因为它有要填充的占位符，但也可以使用Value属性
+			line.Text = Language.GetTextValue("CommonItemTooltip.RestoresLife", RestoreLifeText.Format(Main.LocalPlayer.statLifeMax2 / 2, Main.LocalPlayer.statLifeMax2 / 4));
+		}
+	}
+}
+```
+
+在上面的例子中，`.hjson`文件会自动填充`RestoreLifeText`条目以及现有的`DisplayName`和`Tooltip`条目。然后mod作者用英语更新它：
+```
+ExampleHealingPotion: {
+	DisplayName: Example Healing Potion
+	Tooltip: ""
+	RestoreLifeText: "{0} ({1} when quick healing)"
+}
+```
+
+**注意**
+`LocalizedText`实例旨在静态存储。理想情况下，您应该在加载期间注册和检索一次。`ExampleHealingPotion`示例在`SetStaticDefaults`中执行注册，并将检索到的`LocalizedText`缓存到`RestoreLifeText`属性中。如果缓存太麻烦，您可以每次需要时访问属性，代价是性能较小。请注意，为了使翻译自动填充到`.hjson`文件，您需要在加载期间至少访问一次该属性。
+
+### 从可本地化属性检索文本
+
+在类中，可以使用`LocalizedText`属性向用户显示本地化文本：
+
+```cs
+Main.NewText(SomeLocalizedTextProperty.Value);
+```
+
+如果文本有占位符，可以使用`Format`方法填充它们，该方法接受尽可能多的参数作为占位符：
+
+```cs
+Main.NewText(SomeLocalizedTextPropertyWithPlaceholders.Format(Main.LocalPlayer.statLifeMax2, Main.LocalPlayer.statManaMax2));
+```
+
+### 可继承的本地化属性
+
+使用继承时，可以使用基类中的get-only属性或继承类中的非静态属性来达到同样的效果。继承的特性允许逻辑和翻译被重用，保持代码和`.hjson`文件干净且没有不必要的重复。
+
+例如，假设一个mod中多个物品共享一个基类。可以向基类添加一个属性来保存每个继承物品的`LocalizedText`。必须`SetStaticDefaults`期间访问该属性才能使其自动出现在`.hjson`文件中。
+
+**基类：MyBaseClass**
+```cs
+public LocalizedText SpecialMessage => this.GetLocalization(nameof(SpecialMessage));
+
+public override void SetStaticDefaults() {
+	_ = SpecialMessage;
+}
+```
+
+如果`ClassA`和`ClassB`都继承自`MyBaseClass`，则`.hjson`文件将自动填充`SpecialMessage`键的存根条目：
+
+```
+ClassA: {
+	DisplayName: Class A 
+	Tooltip: ""
+	SpecialMessage: Mods.ExampleMod.Items.ClassA.SpecialMessage
+}
+
+ClassB: {
+	DisplayName: Class B
+	Tooltip: ""
+	SpecialMessage: Mods.ExampleMod.Items.ClassB.SpecialMessage
+}
+```
+
+如果`ClassA`或`ClassB`重写`SetStaticDefaults`，请确保保留`base.SetStaticDefaults()`以便执行原始代码。
+
+`GetLocalization`生成的键的形式为`Mods.{ModName}.{LocalizationCategory}.{ContentName}.{suffix}`。如果需要特定键超出预期模式，mod制作者可以改用`Language.GetOrRegister("Mods.ModName.Full.Key.Here");`或`Mod.GetLocalization("Full.Key.Here");`（`Mod.GetLocalization`是一个快捷方式，它预先添加"Mods.ModName."，与本指南其余部分使用的`ILocalizedModType.GetLocalization`相比，它更通用，因为它不包含`{LocalizationCategory}.{ContentName}.`）。请注意，由于C#的设计，必须用`this.`前缀调用`GetLocalization`，不能省略。通过在继承属性中使用完整键，共享的本地化可以存在于单个公共翻译键中，需要自己键的继承类会重写属性并使用自己的键通过`this.GetLocalization`。
+
+### 另一个示例
+
+[ExampleChest.cs](https://github.com/tModLoader/tModLoader/blob/stable/ExampleMod/Content/Tiles/Furniture/ExampleChest.cs)作为使用自定义键的示例。默认情况下，tModLoader将为每个`ModTile`注册一个翻译键，格式为`Mods.{ModName}.Tiles.{ContentName}.MapEntry`。此键可以轻松地向瓦片添加地图条目。（地图条目控制在全屏地图上悬停瓦片时向用户显示的文本。）但是，`ExampleChest`需要2个地图条目。使用`GetLocalization`，可以轻松地向本地化文件添加新键：
+
+```cs
+AddMapEntry(new Color(200, 200, 200), this.GetLocalization("MapEntry0"), MapChestName);
+AddMapEntry(new Color(0, 141, 63), this.GetLocalization("MapEntry1"), MapChestName);
+```
+
+此代码的结果是本地化文件现在包含这些键，准备好被本地化为其他语言：
+```
+ExampleChest: {
+	MapEntry0: Example Chest
+	MapEntry1: Locked Example Chest
+}
+```
+
+在ExampleChest.cs的其他地方，这些本地化键使用`GetLocalization`动态检索：
+
+```cs
+public override LocalizedText DefaultContainerName(int frameX, int frameY) {
+	int option = frameX / 36;
+	return this.GetLocalization("MapEntry" + option);
+}
+```
+
+此方法对于动态本地化键很有用。
+
+### ModType和ILocalizedModType
+实现自定义`ModType`的mod可以实现`ILocalizedModType`来轻松促进本地化。这就像在类继承中添加`, ILocalizedModType`并实现`LocalizationCategory`属性一样简单，添加`public string LocalizationCategory => "MyModTypeCategory";`。对于自定义`ModType`类中的每个`LocalizedText`，您可以使用`public virtual LocalizedText DisplayName => this.GetLocalization(nameof(DisplayName), PrettyPrintName);`，允许它们在`.hjson`文件中与其他现有`ModType`类一样正确分类。
+
+您还需要确保每个`LocalizedText`在mod加载期间被访问，以便它们自动填充`.hjson`文件。如果您的逻辑尚未访问它们，只需将`_ = DisplayName;`添加到类的`ModType.SetupContent`方法中即可。
+
+**深入了解：**`GetLocalization`是一个帮助方法，用于简化代码和避免拼写错误。`GetLocalization`等同于使用完整键调用`Language.GetOrRegister`。同样，`GetLocalizedValue`以相同方式等同于`Language.GetTextValue`。如果需要，可以使用`GetLocalizationKey`检索生成的键。
+
+`GetLocalization`和`Language.GetOrRegister`有一个名为`makeDefaultValue`的可选第二个参数，该参数定义一个函数，该函数将用于创建默认值，如果本地化不存在则使用该默认值。例如，传入`() => ""`将导致默认值为空字符串而不是键。mod制作者可以传入`PrettyPrintName`以获得典型行为，即获取内容的内部名称并在每个大写字母之间添加空格。如果本地化是可选的，或者您有一个合理的默认值，则应使用此方法。
+
+# 添加新语言
+默认情况下，tModLoader只会为已经出现在`.hjson`文件中的语言生成和更新本地化文件。要添加新语言，只需创建一个文本文件并以与现有本地化文件相同的方式命名。您只需要创建一个。文件或文件夹路径需要包含语言代码：英语（"en-US"）、德语（"de-DE"）、意大利语（"it-IT"）、法语（"fr-FR"）、西班牙语（"es-ES"）、俄语（"ru-RU"）、中文（"zh-Hans"）、葡萄牙语（"pt-BR"）或波兰语（"pl-PL"）。创建文件并具有正确的文件扩展名后，重新构建mod。该文件将更新为准备好翻译的条目。其他文件也将根据英语hjson文件的组织方式生成。
+
+除英语外的本地化文件的注释和组织都继承自英语文件。如果您想为翻译者添加积分，请将它们全部添加到英语文件顶部的注释中，它们将从那里传播到非英语文件。
+
+mod制作者可以随意组织英语本地化文件，其他语言文件会相应地进行更新。如果您拆分本地化文件，您只需要编辑英语文件，然后构建并重新加载mod。其他语言将自动调整自己以匹配相同的布局。从英语文件中删除键同样会导致从其他语言文件中删除该键。简而言之，mod制作者通常只需要接触英语文件，其他语言文件会自动调整自己。
+
+---
+
+```
+Wiki编辑者注意事项：
+此页面不是原始页面的精确翻译。
+根据目标语言的性质，有添加、删除或修改。
+如果您想翻译此页面，建议参考原始页面。
+```
+
+---
+
+````
+由Blueberryy（Discord上的theonlyoneblueberry）翻译。
+````
