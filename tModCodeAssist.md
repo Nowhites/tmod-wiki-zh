@@ -1,5 +1,5 @@
 # 什么是 tModCodeAssist？
-`tModCodeAssist` 是一个[自定义代码分析器](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/overview)，为模组项目提供代码修复。它包含在 tModLoader 中并自动启用。为了利用 `tModCodeAssist`，请确保您的 [IDE](https://github.com/tModLoader/tModLoader/wiki/Why-Use-an-IDE) 根据我们的指南正确配置。
+`tModCodeAssist` 是一个[自定义代码分析器](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/overview)，为模组项目提供代码修复。它包含在 tModLoader 中并自动启用。为了利用 `tModCodeAssist`，请确保您的 [IDE](Why-Use-an-IDE.md) 根据我们的指南正确配置。
 
 `tModCodeAssist` 的目的是帮助模组制作者创建可读的代码。例如，在遵循[原版代码适配指南](https://github.com/tModLoader/tModLoader/wiki/Advanced-Vanilla-Code-Adaption)时，模组制作者可能会在源代码中得到 `int dust = Dust.NewDust(projectilePosition, 1, 1, 175, 0f, 0f, 0, default(Color), 1f);`。数字 `175` 对应于特定的灰尘，但仅从数字本身不可能知道是哪种灰尘。`tModCodeAssist` 不是在 `DustID.cs` 中查找数字，而是会建议一个代码修复，自动将 `175` 更改为 `DustID.SpectreStaff`，模组制作者可以选择将其应用到他们的代码中。
 

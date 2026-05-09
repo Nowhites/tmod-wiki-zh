@@ -14,8 +14,8 @@ Contact translators:
 此指南是为 1.4.4 版 tModLoader 而作。在 1.4.3 版本的 tModLoader 中，本地化文件不会自动更新，此指南中的一些方法也不存在。但基本概念是一样的。
 ***
 
-[Original Page (English) | 原页面（英文）](https://github.com/tModLoader/tModLoader/wiki/Localization)<br />
-[Русская версия страницы | 俄文](https://github.com/tModLoader/tModLoader/wiki/ru-Localization-Локализация)
+[Original Page (English) | 原页面（英文）](Localization.md)<br />
+[Русская версия страницы | 俄文](ru-Localization-Локализация.md)
 
 ---
 

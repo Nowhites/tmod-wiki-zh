@@ -12,7 +12,7 @@ ___
 - 一个流行的跨平台替代方案是Jetbrains的[**Rider**](https://www.jetbrains.com/rider)。Rider对此类非商业项目免费使用。
 
 ### Git
-如果您以前从未使用过Git，请查看我们的[有关如何使用它的指南](https://github.com/tModLoader/tModLoader/wiki/Intermediate-Git-&-mod-management)。如果您在阅读本指南时遇到不认识的内容，只需用Google搜索。您应该能够轻松找到与您的问题相关的内容。您也可以查看[这个简短指南](#进一步的在线帮助)。
+如果您以前从未使用过Git，请查看我们的[有关如何使用它的指南](Intermediate-Git-&-mod-management.md)。如果您在阅读本指南时遇到不认识的内容，只需用Google搜索。您应该能够轻松找到与您的问题相关的内容。您也可以查看[这个简短指南](#进一步的在线帮助)。
 此外，如果您本质上害怕命令行，像[GitHub desktop](https://desktop.github.com/)和[VisualStudio的Github扩展](https://marketplace.visualstudio.com/items?itemName=GitHub.GitHubExtensionforVisualStudio)等附加工具可以以用户友好的界面提供您需要的大部分功能。
 
 # 代码补丁程序

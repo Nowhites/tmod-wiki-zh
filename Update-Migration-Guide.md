@@ -835,7 +835,7 @@ tModPorter是一个自动为tModLoader的更改修复模组源代码代码的工
 > - 模组制作者应仔细检查其`Item.shopCustomPrice`用法。我们最近意识到模组设置`shopCustomPrice`远低于`Item.value`。我们已经确定，custom price为regular value的`0.44倍`将允许拥有max happiness和折扣卡的用户在离开并进入世界后以高于购买价格的价格将物品卖回商店。这是因为normal `Item.value`用于确定销售价格。要么提高`shopCustomPrice`要么降低`Item.value`以避免此利用。
 
 # v2024.03
-此版本包括从.NET 6到.NET 8的更新。模组制作者需要安装[.NET 8 SDK](https://github.com/tModLoader/tModLoader/wiki/tModLoader-guide-for-developers#net-8-sdk)并[将Visual Studio更新到至少VS2022 17.8](https://learn.microsoft.com/en-us/visualstudio/install/update-visual-studio?view=vs-2022#use-the-visual-studio-installer-1)。之后，重启电脑。详见下文。
+此版本包括从.NET 6到.NET 8的更新。模组制作者需要安装[.NET 8 SDK](tModLoader-guide-for-developers.md#net-8-sdk)并[将Visual Studio更新到至少VS2022 17.8](https://learn.microsoft.com/en-us/visualstudio/install/update-visual-studio?view=vs-2022#use-the-visual-studio-installer-1)。之后，重启电脑。详见下文。
 
 ### `将TML从.NET 6移植到.NET 8`
 **拉取请求：** <https://github.com/tModLoader/tModLoader/pull/4037>

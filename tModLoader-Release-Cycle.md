@@ -59,7 +59,7 @@ gantt
 ### 模组制作者说明
 模组制作者应关注[tModLoader Discord](http://discord.gg/tmodloader)中的`#preview-update-log`，并查找与模组功能相关的重大更改。如果有**运行时中断**相关的列表，您应该加入`preview-v2023.X`分支并在下个月初之前发布更新，这样您的用户就可以继续无缝使用您的模组。如果相关更改仅列为**源代码中断**，则不紧急，您只需要在更改上线后遵循**移植说明**部分。
 
-如果您不使用Discord，[更新迁移指南](https://github.com/tModLoader/tModLoader/wiki/Update-Migration-Guide)也将使用相同的信息进行更新。
+如果您不使用Discord，[更新迁移指南](Update-Migration-Guide.md)也将使用相同的信息进行更新。
 
 ## 发布周期V1 - 在1.4.3时代使用
 在每个月初，一个新版本的tModLoader为稳定版（默认）玩家提供。

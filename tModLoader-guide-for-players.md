@@ -1,6 +1,6 @@
 ___
 
-**[我不想只玩模组，我想制作模组](https://github.com/tModLoader/tModLoader/wiki/tModLoader-guide-for-developers)**
+**[我不想只玩模组，我想制作模组](tModLoader-guide-for-developers.md)**
 
 ___
 

@@ -13,7 +13,7 @@ ___
 如果您仍需要安装tModLoader，请参阅[tModLoader玩家指南](tModLoader-guide-for-players)。
 
 ## 使用tModLoader进行开发
-在开始之前，您需要两样东西：".NET 8 SDK"和一个合适的IDE。安装这些后，您应该从[Basic tModLoader Modding Guide](https://github.com/tModLoader/tModLoader/wiki/Basic-tModLoader-Modding-Guide)开始。
+在开始之前，您需要两样东西：".NET 8 SDK"和一个合适的IDE。安装这些后，您应该从[Basic tModLoader Modding Guide](Basic-tModLoader-Modding-Guide.md)开始。
 
 ### IDE
 选择您喜欢的IDE来使用tModLoader制作模组。请参阅主页上的[开发部分](https://github.com/tModLoader/tModLoader/wiki#development)。为了获得最佳模组制作体验，强烈推荐使用Visual Studio。目前需要2022 v17.8或更高版本。

@@ -24,7 +24,7 @@
 
 # 预备知识
 ## 瓷砖坐标
-世界的最左上角位于瓷砖坐标的`0, 0`，右下角位于`Main.maxTilesX, Main.maxTilesY`。这些坐标直接映射到`Main.tile[,]`。有关更多信息，请参阅[坐标](https://github.com/tModLoader/tModLoader/wiki/Coordinates)。按照惯例，我们在代码中使用`x`和`y`或`i`和`j`表示瓷砖坐标。我们需要多对变量，因为很多时候我们使用的是从其他坐标派生出来的坐标。
+世界的最左上角位于瓷砖坐标的`0, 0`，右下角位于`Main.maxTilesX, Main.maxTilesY`。这些坐标直接映射到`Main.tile[,]`。有关更多信息，请参阅[坐标](Coordinates.md)。按照惯例，我们在代码中使用`x`和`y`或`i`和`j`表示瓷砖坐标。我们需要多对变量，因为很多时候我们使用的是从其他坐标派生出来的坐标。
 
 ## Main.tile[,]
 `Main.tile[,]`是一个包含世界中所有瓷砖的二维数组。你可以通过写`Tile tile = Main.tile[x, y];`在世界生成期间直接访问特定`x`和`y`坐标处的`Tile`结构。请注意，尝试访问坐标为负数或超出世界范围的瓷砖将导致错误。为避免此问题，请在使用`Main.tile[x, y]`之前使用[`WorldGen.InWorld`](https://github.com/tModLoader/tModLoader/wiki/World-Generation#terrariaworldgen-public-static-bool-inworldint-x-int-y-int-fluff--0)方法确保坐标有效。

@@ -21,7 +21,7 @@ otherProperty = value1, value2, value3
 | author | 显示mod时使用的作者<br><br><details><summary>贡献者（可以发布更新的其他mod作者）</summary><blockquote>请注意，作者字段只是一个显示值，它实际上不控制任何内容。如果您与其他mod作者合作，并希望让他们为此mod发布更新到Steam创意工坊，您可以在mod发布到创意工坊后，点击创意工坊页面上的"添加/删除贡献者"来添加他们。在添加贡献者时要格外小心，只能添加您绝对信任的贡献者。<br>![image](https://github.com/user-attachments/assets/3b13aafe-9096-421a-9a0e-e9f2b9995ec5)</blockquote></details> |
 | version | 显示mod时使用的版本。<br>必须是2到4个用句点分隔的数字。<br>值必须采用以下格式：`<主版本>.<次版本>.<构建>.<修订>`（例如1.2.3.4）<br>**这些不是小数**，例如`1.02`与`1.2`相同。另外，`1.101`大于`1.2`，因为`101 > 2`。`1`和`1.2.3.4.5`都不允许，因为需要2到4个数字。 |
 | dllReferences | mod除其他mod的dll外所依赖的dll引用列表。请勿在此处包含mod。<br>按文件名（不带扩展名）引用。<br>您必须将dll文件放在mod源代码顶层目录的`lib/`文件夹中。 |
-| modReferences | mod所依赖的其他mod列表。此mod将要求启用依赖的mod才能启用此mod。<br>按文件名（不带扩展名）引用mod。请参阅[跨Mod内容专家指南](https://github.com/tModLoader/tModLoader/wiki/Expert-Cross-Mod-Content)了解如何正确使用此功能。 |
+| modReferences | mod所依赖的其他mod列表。此mod将要求启用依赖的mod才能启用此mod。<br>按文件名（不带扩展名）引用mod。请参阅[跨Mod内容专家指南](Expert-Cross-Mod-Content.md)了解如何正确使用此功能。 |
 | weakReferences | mod将构建并可以本地交互的mod列表，但不一定需要启用。本质上是可选的modReferences，但需要mod作者在编程时更加小心以避免绑定错误。请参阅[跨Mod内容专家指南](https://github.com/tModLoader/tModLoader/wiki/Expert-Cross-Mod-Content)了解如何正确使用此功能。 |
 | noCompile | mod在构建时是否应编译源代码，还是使用mod作者预编译的.dll文件。如果您不包含此属性，默认为false。预编译的dll文件必须命名为"ModName.dll"，其中`ModName`是您的mod名称。 | false |
 | homepage | mod主页的链接。这将与Steam创意工坊页面一起列在"更多信息"菜单中。 | |

@@ -2,8 +2,8 @@
 本指南是为tModLoader 1.4.4版编写的，即将发布的tModLoader版本。在当前的tModLoader版本中，本地化文件不会自动更新，本指南中提到的一些方法也不存在。基本概念仍然适用。
 ***
 
-[原始页面（英文） | 原始页面（英文）](https://github.com/tModLoader/tModLoader/wiki/Localization)<br />
-[中文版 | 中文版](https://github.com/tModLoader/tModLoader/wiki/zh%3ALocalization-%E6%9C%AC%E5%9C%B0%E5%8C%96)
+[原始页面（英文） | 原始页面（英文）](Localization.md)<br />
+[中文版 | 中文版](zh‐Localization‐本地化.md)
 
 ---
 
