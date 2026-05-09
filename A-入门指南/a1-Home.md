@@ -24,24 +24,24 @@
 - [许可信息](Licensing-information)（包括：如何许可您的模组，关于 tML 的许可证）
 
 ## 入门指南
-- [面向玩家的 tModLoader 指南](tModLoader-guide-for-players) -- 如果您想玩模组，请学习 tModLoader
-- [面向开发者的 tModLoader 指南](tModLoader-guide-for-developers) -- 学习如何使用 tModLoader 创建模组
-- [面向贡献者的 tModLoader 指南](tModLoader-guide-for-contributors) -- 学习如何为 tModLoader 做贡献
-- [tModLoader 基础使用指南](Basic-tModLoader-Usage-Guide) -- 学习使用 tML 的基础知识
-- [tModLoader 基础使用常见问题](Basic-tModLoader-Usage-FAQ) -- 查找常见使用问题和错误的修复方法
-- [tModLoader 模组制作入门指南](Basic-tModLoader-Modding-Guide) - 如果您想制作模组，请从这里开始。
-- [tModLoader 模组制作常见问题](Basic-tModLoader-Modding-FAQ)
+- [面向玩家的 tModLoader 指南](tModLoader-guide-for-players.md) -- 如果您想玩模组，请学习 tModLoader
+- [面向开发者的 tModLoader 指南](tModLoader-guide-for-developers.md) -- 学习如何使用 tModLoader 创建模组
+- [面向贡献者的 tModLoader 指南](tModLoader-guide-for-contributors.md) -- 学习如何为 tModLoader 做贡献
+- [tModLoader 基础使用指南](Basic-tModLoader-Usage-Guide.md) -- 学习使用 tML 的基础知识
+- [tModLoader 基础使用常见问题](Basic-tModLoader-Usage-FAQ.md) -- 查找常见使用问题和错误的修复方法
+- [tModLoader 模组制作入门指南](Basic-tModLoader-Modding-Guide.md) - 如果您想制作模组，请从这里开始。
+- [tModLoader 模组制作常见问题](Basic-tModLoader-Modding-FAQ.md)
 - [运行模组服务器](Starting-a-modded-server) -- 学习如何设置模组服务器
 - [调试多人游戏使用问题](Debugging-Multiplayer-Usage-Issues)
 
 ## 开发指南
 这些页面旨在帮助您学习如何正确开发模组、如何设置开发环境等。
-- [使用 Visual Studio 开发](Developing-with-Visual-Studio) -- 推荐，但仅限 Windows。
-- [使用 Visual Studio Code 开发](Developing-with-Visual-Studio-Code) -- 轻量级、跨平台，功能较少。
-- [使用 Rider 开发](Developing-with-Rider) -- 跨平台。
-- [为什么使用 IDE](Why-Use-an-IDE) -- 了解 Visual Studio 和其他 IDE 如何帮助模组开发者更轻松地制作模组。
-- [学习如何调试](Learn-How-To-Debug) -- 调试是我们查找和修复错误和 bug 的方式。
-- [更新迁移指南](Update-Migration-Guide) -- 包含更新（移植）模组到每个新 tModLoader 版本所需的代码更新信息。
+- [使用 Visual Studio 开发](Developing-with-Visual-Studio.md) -- 推荐，但仅限 Windows。
+- [使用 Visual Studio Code 开发](Developing-with-Visual-Studio-Code.md) -- 轻量级、跨平台，功能较少。
+- [使用 Rider 开发](Developing-with-Rider.md) -- 跨平台。
+- [为什么使用 IDE](Why-Use-an-IDE.md) -- 了解 Visual Studio 和其他 IDE 如何帮助模组开发者更轻松地制作模组。
+- [学习如何调试](Learn-How-To-Debug.md) -- 调试是我们查找和修复错误和 bug 的方式。
+- [更新迁移指南](Update-Migration-Guide.md) -- 包含更新（移植）模组到每个新 tModLoader 版本所需的代码更新信息。
 
 ## 简单指南
 这些指南很简单，如果您是 tModLoader API 的新手，应该使用它们。它们的目的是让您熟悉 tModLoader，并帮助您学习如何制作各种类型的内容。
@@ -50,7 +50,7 @@
 - [基础弹药指南](Basic-Ammo)
 - [基础自动加载指南](Basic-Autoload)
 - [基础坐标指南](Coordinates)
-- [几何学](Geometry)
+- [几何学](Geometry.md)
 - [基础发光面具指南](Basic-glowmask-guide)
 - [实体来源](IEntitySource)
 - [本地化](Localization)
@@ -103,17 +103,17 @@
 - [专家级跨模组内容指南](Expert-Cross-Mod-Content) -- 调用、弱引用、模组引用、配方
 - [专家级 IL 编辑](Expert-IL-Editing) -- 使用 MonoMod 修补游戏
 - [专家级 IL 编辑其他模组](Patching-Other-Mods-Using-MonoMod)
-- [使用 HookEndpointManager 的专家级 IL 编辑](Detouring-and-IL-Editing-using-HookEndpointManager)
-- [专家级着色器指南](Expert-Shader-Guide) -- 护甲染料和屏幕着色器
-- [tModCodeAssist](tModCodeAssist) -- 关于为 tModLoader 的自定义代码分析器配置和实现新代码修复的信息。
+- [使用 HookEndpointManager 的专家级 IL 编辑](Detouring-and-IL-Editing-using-HookEndpointManager.md)
+- [专家级着色器指南](Expert-Shader-Guide.md) -- 护甲染料和屏幕着色器
+- [tModCodeAssist](tModCodeAssist.md) -- 关于为 tModLoader 的自定义代码分析器配置和实现新代码修复的信息。
 
 ## 原版参考
 #### 指南/值参考/更改
-- [旗帜到 NPC 转换](BannerToNPC-Conversions)
-- [玩家物品动画](Player-Item-Animation)
-- [有用的原版字段](Useful-Vanilla-Fields)
-- [有用的原版方法](Useful-Vanilla-Methods)
-- [原版内容 ID](Vanilla-Content-IDs) -- ItemID、ProjectileID、TileID、NPCID、TileID、WallID、BuffID、SoundID 等。
+- [旗帜到 NPC 转换](BannerToNPC-Conversions.md)
+- [玩家物品动画](Player-Item-Animation.md)
+- [有用的原版字段](Useful-Vanilla-Fields.md)
+- [有用的原版方法](Useful-Vanilla-Methods.md)
+- [原版内容 ID](Vanilla-Content-IDs.md) -- ItemID、ProjectileID、TileID、NPCID、TileID、WallID、BuffID、SoundID 等。
 - [原版游戏 Wiki 数据 ID](https://terraria.wiki.gg/wiki/Data_IDs)
 - [原版界面更改](Vanilla-Class-Changes)
 - [原版界面层值](Vanilla-Interface-layers-values)
@@ -129,11 +129,12 @@
 - [物品类文档](Item-Class-Documentation)
 - [NetMessage 类文档](NetMessage-Class-Documentation)
 - [NPC 类文档](NPC-Class-Documentation)
-- [弹射物类文档](Projectile-Class-Documentation)
+- [弹射物类文档](Projectile-Class-Documentation.md)
+- [原版类文档](Vanilla-Class-Documentation.md)
 
 ## 其他页面
 这些是我们目前未能分类或根本不属于任何一类的页面。
-- [坐骑数据参数](MountDataParameters)
-- [开源模组](Open-Source-Mods)
-- [命令行参数和服务器配置](Command-Line)
-- [.tmod 文件格式](https://github.com/tModLoader/tModLoader/wiki/.tmod-File-format)
+- [坐骑数据参数](MountDataParameters.md)
+- [开源模组](Open-Source-Mods.md)
+- [命令行参数和服务器配置](Command-Line.md)
+- [.tmod 文件格式](.tmod-File-format.md)
