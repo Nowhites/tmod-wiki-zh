@@ -1,3 +1,5 @@
+[原链接](https://github.com/tModLoader/tModLoader)
+
 # tModLoader Wiki
 
 欢迎来到 tModLoader Wiki 文档仓库！本仓库包含了超过 100 个 Markdown 文档，全面覆盖 tModLoader 的技术指南、使用教程和开发参考。

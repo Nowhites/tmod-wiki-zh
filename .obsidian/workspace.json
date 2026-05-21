@@ -1,0 +1,194 @@
+{
+  "main": {
+    "id": "99e9a463ffbaf539",
+    "type": "split",
+    "children": [
+      {
+        "id": "852d7e21bf26084c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f8b35d24e1656db7",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "C-基础开发教程/c3-物品系统.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "c3-物品系统"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "dffbc0cd20fda7e7",
+    "type": "split",
+    "children": [
+      {
+        "id": "270dee7021a21e8a",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "50b00e79b56d54e5",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "4db8521eb7e3750c",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "9b35708c66be0f34",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "e1fda029c2d01ace",
+    "type": "split",
+    "children": [
+      {
+        "id": "8dc3516a16a2663c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b0544c349a0f5526",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "C-基础开发教程/c3-物品系统.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "c3-物品系统 的反向链接列表"
+            }
+          },
+          {
+            "id": "95b2720d9f5d1151",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "C-基础开发教程/c3-物品系统.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "c3-物品系统 的出链列表"
+            }
+          },
+          {
+            "id": "14a7cc7ce4e09ccd",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "5d1cf016c294743b",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "添加笔记属性"
+            }
+          },
+          {
+            "id": "3f98c9a080560c03",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "C-基础开发教程/c3-物品系统.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "c3-物品系统 的大纲"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:新建数据库": false
+    }
+  },
+  "active": "f8b35d24e1656db7",
+  "lastOpenFiles": [
+    "C-基础开发教程/c2-自动加载机制.md",
+    "C-基础开发教程/c1-开发前置要求.md",
+    "C-基础开发教程/c3-物品系统.md",
+    "A-入门指南/a2-基础使用指南.md",
+    "A-入门指南/a1-Home.md"
+  ]
+}
